@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from io import BytesIO
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import zipfile
 
 from docx import Document
@@ -16,6 +18,7 @@ MAX_SOURCE_BYTES = 5 * 1024 * 1024
 MAX_TEXT_CHARS = 100_000
 MAX_DOCX_UNCOMPRESSED_BYTES = 25 * 1024 * 1024
 MAX_DOCX_ZIP_MEMBERS = 5000
+MAX_DOC_OUTPUT_BYTES = MAX_TEXT_CHARS * 4
 ANTIWORD_TIMEOUT_SECONDS = 15
 ALLOWED_EXTENSIONS = {".txt", ".md", ".docx", ".doc"}
 
@@ -99,25 +102,36 @@ def _extract_doc(raw: bytes) -> str:
         with tempfile.TemporaryDirectory(prefix="neon-smart-import-") as temporary:
             document_path = Path(temporary) / "upload.doc"
             document_path.write_bytes(raw)
-            result = subprocess.run(
-                ["antiword", str(document_path)],
-                cwd=temporary,
-                capture_output=True,
-                check=False,
-                encoding="utf-8",
-                errors="replace",
-                shell=False,
-                timeout=ANTIWORD_TIMEOUT_SECONDS,
-            )
+            command = ["antiword", str(document_path)]
+            process = subprocess.Popen(command, cwd=temporary, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=False)
+            started = time.monotonic()
+            try:
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    output = executor.submit(process.stdout.read, MAX_DOC_OUTPUT_BYTES + 1)
+                    try:
+                        raw_output = output.result(timeout=ANTIWORD_TIMEOUT_SECONDS)
+                    except FutureTimeoutError as exc:
+                        process.kill()
+                        process.wait()
+                        raise SmartImportInputError("DOC 文件解析超时，请另存为 DOCX 后重试") from exc
+                if len(raw_output) > MAX_DOC_OUTPUT_BYTES:
+                    process.kill()
+                    process.wait()
+                    raise SmartImportInputError("DOC 提取文字过多，已拒绝读取")
+                return_code = process.wait(timeout=max(0.01, ANTIWORD_TIMEOUT_SECONDS - (time.monotonic() - started)))
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                raise
     except FileNotFoundError as exc:
         raise SmartImportInputError("服务器缺少 antiword，暂时无法读取 DOC 文件") from exc
     except subprocess.TimeoutExpired as exc:
         raise SmartImportInputError("DOC 文件解析超时，请另存为 DOCX 后重试") from exc
     except OSError as exc:
         raise SmartImportInputError("DOC 文件解析失败，请另存为 DOCX 后重试") from exc
-    if result.returncode != 0:
+    if return_code != 0:
         raise SmartImportInputError("DOC 文件损坏或格式无法读取，请另存为 DOCX 后重试")
-    return result.stdout
+    return raw_output.decode("utf-8", errors="replace")
 
 
 def extract_document(*, text: str | None = None, upload=None) -> ExtractedDocument:

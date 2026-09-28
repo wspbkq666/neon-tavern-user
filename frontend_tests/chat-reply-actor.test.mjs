@@ -5,7 +5,7 @@ import test from 'node:test';
 const js = await readFile(new URL('../frontend_dist/assets/prototype-app.js', import.meta.url), 'utf8');
 
 test('switching from chat to another main panel hides the chat view and composer', () => {
-  assert.match(js, /window\.openPanel = id => \{ closeSettingsPanels\(\);\s*original\.showConversations\(\);/);
+  assert.match(js, /window\.openPanel = id => \{ closeSettingsPanels\(\);[\s\S]*?original\.showConversations\(\);/);
 });
 
 test('reply role picker is built from the current conversation participants', () => {

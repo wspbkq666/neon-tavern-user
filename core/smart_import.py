@@ -150,7 +150,8 @@ def normalize_smart_import(result):
                 warnings.append(f"字段 {key} 暂无对应的本地角色卡字段，原内容保留在草稿中供确认。")
             for key in source_fields:
                 if key not in allowed and key not in {"first_mes", "alternate_greetings", "character_worldbook"}:
-                    warnings.append(f"未知字段 {key} 未写入角色卡。")
+                    unmapped_fields[key] = source_fields[key]
+                    warnings.append(f"字段 {key} 暂无对应的本地角色卡字段，已保留在待确认字段中。")
             name = source_fields["name"].strip()
             for field_name in ("description", "summary", "personality", "scenario", "memories", "mes_example", "speech_habits", "clothing_type", "clothing_state"):
                 value = source_fields.get(field_name)
@@ -195,7 +196,8 @@ def normalize_smart_import(result):
             fields = {key: value for key, value in source_fields.items() if key in allowed}
             for key in source_fields:
                 if key not in allowed:
-                    warnings.append(f"未知字段 {key} 未写入世界书。")
+                    unmapped_fields[key] = source_fields[key]
+                    warnings.append(f"字段 {key} 暂无对应的本地世界书字段，已保留在待确认字段中。")
             entries = source_fields.get("entries", [])
             if not isinstance(entries, list) or not entries or len(entries) > 5000:
                 raise ValueError("世界书必须包含 1 到 5000 条有效条目")
@@ -203,6 +205,9 @@ def normalize_smart_import(result):
         else:
             warnings.append("无法可靠判断内容类型，默认不加入导入负载。")
             fields = {key: value for key, value in source_fields.items() if key in CHARACTER_FIELDS or key in {"entries", "description"}}
+            unmapped_fields = {key: value for key, value in source_fields.items() if key not in fields}
+            if unmapped_fields:
+                warnings.append("无法识别的字段已保留在待确认字段中，不会自动导入。")
         draft = {"id": index, "type": kind, "fields": fields, "source_excerpt": item["source_excerpt"], "confidence": float(item["confidence"]), "warnings": warnings}
         if kind in {"npc", "player"}:
             draft["bundle_id"] = package_id

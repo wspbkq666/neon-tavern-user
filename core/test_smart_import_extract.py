@@ -1,5 +1,6 @@
 from io import BytesIO
 import subprocess
+import time
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -61,26 +62,52 @@ class SmartImportExtractionTests(SimpleTestCase):
         self.assertIn("偏好", result.text)
         self.assertIn("探索", result.text)
 
-    def test_doc_uses_antiword_with_bounded_timeout(self):
+    def test_doc_uses_antiword_with_bounded_output_and_no_shell(self):
         upload = SimpleUploadedFile("人物.doc", b"legacy word")
-        completed = subprocess.CompletedProcess(["antiword"], 0, stdout="角色：林雾\n", stderr="")
+        process = MagicMock()
+        process.stdout = BytesIO("角色：林雾\n".encode())
+        process.wait.return_value = 0
 
-        with patch("core.smart_import_extract.subprocess.run", return_value=completed) as run:
+        with patch("core.smart_import_extract.subprocess.Popen", return_value=process) as run:
             result = extract_document(upload=upload)
 
         self.assertEqual(result.text, "角色：林雾\n")
         self.assertEqual(run.call_args.args[0][0], "antiword")
-        self.assertEqual(run.call_args.kwargs["timeout"], 15)
+        self.assertEqual(run.call_args.kwargs["stdout"], subprocess.PIPE)
+        self.assertEqual(run.call_args.kwargs["stderr"], subprocess.DEVNULL)
         self.assertFalse(run.call_args.kwargs["shell"])
 
     def test_unknown_extension_is_rejected_before_running_a_parser(self):
         upload = SimpleUploadedFile("资料.rtf", b"some text")
 
-        with patch("core.smart_import_extract.subprocess.run") as run:
+        with patch("core.smart_import_extract.subprocess.Popen") as run:
             with self.assertRaises(SmartImportInputError):
                 extract_document(upload=upload)
 
         run.assert_not_called()
+
+    def test_doc_output_over_limit_is_terminated(self):
+        process = MagicMock()
+        process.stdout = BytesIO(b"x" * 5)
+        process.wait.return_value = 0
+        with patch("core.smart_import_extract.MAX_DOC_OUTPUT_BYTES", 4), patch("core.smart_import_extract.subprocess.Popen", return_value=process):
+            with self.assertRaises(SmartImportInputError):
+                extract_document(upload=SimpleUploadedFile("long.doc", b"legacy word"))
+        process.kill.assert_called_once()
+
+    def test_doc_parser_timeout_terminates_the_child_process(self):
+        class SlowOutput:
+            def read(self, _size):
+                time.sleep(0.03)
+                return b""
+
+        process = MagicMock()
+        process.stdout = SlowOutput()
+        process.wait.return_value = 0
+        with patch("core.smart_import_extract.ANTIWORD_TIMEOUT_SECONDS", 0.005), patch("core.smart_import_extract.subprocess.Popen", return_value=process):
+            with self.assertRaises(SmartImportInputError):
+                extract_document(upload=SimpleUploadedFile("slow.doc", b"legacy word"))
+        process.kill.assert_called_once()
 
     def test_oversized_file_is_rejected(self):
         upload = SimpleUploadedFile("large.txt", b"x" * (5 * 1024 * 1024 + 1))
@@ -117,7 +144,7 @@ class SmartImportExtractionTests(SimpleTestCase):
         upload = SimpleUploadedFile("人物.doc", b"legacy word")
 
         with patch(
-            "core.smart_import_extract.subprocess.run",
+            "core.smart_import_extract.subprocess.Popen",
             side_effect=FileNotFoundError("antiword"),
         ):
             with self.assertRaisesRegex(SmartImportInputError, "antiword"):

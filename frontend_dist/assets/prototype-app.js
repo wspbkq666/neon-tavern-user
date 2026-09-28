@@ -24,10 +24,16 @@ let worldBookEditingId = null;
 const worldBookState = { books: [], current: null, entries: [], categories: [], manage: false, selected: new Set() };
 const bundleState = { payload: null, preview: null, mode: 'file' };
 const marketState = { scope: 'local', kind: '', query: '', listings: [], selected: null, bundleSelection: null, timer: null };
-const smartImportState = { drafts: [], payload: null, preview: null, busy: false };
+const smartImportState = { drafts: [], payload: null, preview: null, revision: 0, busy: false };
 
 const smartImportNewId = () => window.crypto?.randomUUID?.() || `smart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const smartImportTextValue = (value, maximum, label) => {
+  const text = String(value || '');
+  if (text.length > maximum) throw new Error(`${label}不能超过 ${maximum} 个字符`);
+  return text;
+};
 function smartImportInvalidatePreview() {
+  smartImportState.revision += 1;
   smartImportState.preview = null;
   $('#smartImportBundlePreview').hidden = true;
   $('#smartImportConfirm').hidden = true;
@@ -50,29 +56,32 @@ function smartImportBuildPayload() {
     if (draft.skipped || !['npc', 'player'].includes(draft.type)) continue;
     const fields = draft.fields || {};
     const name = String(fields.name || '').trim();
-    if (!name) throw new Error('角色卡名称不能为空');
+    if (!name || name.length > 60) throw new Error('角色卡名称需填写且不能超过 60 个字符');
     const packageId = draft.bundle_id || smartImportNewId();
     draft.bundle_id = packageId;
     characterIds.set(name.toLocaleLowerCase(), [...(characterIds.get(name.toLocaleLowerCase()) || []), packageId]);
-    payload.characters.push({ package_id: packageId, name, summary: String(fields.summary || '').slice(0, 200), personality: String(fields.personality || '').slice(0, 10000), speech_habits: String(fields.speech_habits || '').slice(0, 5000), memories: String(fields.memories || '').slice(0, 10000), relationship_notes: fields.relationship_notes || {}, state_fields: fields.state_fields || {}, affinity: Number.isInteger(fields.affinity) ? fields.affinity : 0, clothing_type: fields.clothing_type || '', clothing_state: fields.clothing_state || '', is_player_controlled: draft.type === 'player', categories: Array.isArray(fields.categories) ? fields.categories : [] });
+    payload.characters.push({ package_id: packageId, name, summary: smartImportTextValue(fields.summary, 200, '角色摘要'), personality: smartImportTextValue(fields.personality, 10000, '性格'), speech_habits: smartImportTextValue(fields.speech_habits, 5000, '说话习惯'), memories: smartImportTextValue(fields.memories, 10000, '角色背景'), relationship_notes: fields.relationship_notes || {}, state_fields: fields.state_fields || {}, affinity: Number.isInteger(fields.affinity) ? fields.affinity : 0, clothing_type: smartImportTextValue(fields.clothing_type, 200, '衣着类型'), clothing_state: smartImportTextValue(fields.clothing_state, 200, '衣着状态'), is_player_controlled: draft.type === 'player', categories: Array.isArray(fields.categories) ? fields.categories : [] });
   }
   for (const draft of smartImportState.drafts) {
     if (draft.skipped || draft.type !== 'worldbook') continue;
     const fields = draft.fields || {};
     const name = String(fields.name || '').trim();
-    if (!name) throw new Error('世界书名称不能为空');
+    if (!name || name.length > 120) throw new Error('世界书名称需填写且不能超过 120 个字符');
+    const description = smartImportTextValue(fields.description, 20000, '世界书简介');
     if (!Array.isArray(fields.entries) || !fields.entries.length) throw new Error('世界书至少需要一条条目');
     const packageId = draft.bundle_id || smartImportNewId();
     draft.bundle_id = packageId;
     const categoryId = `smart-import-category-${draft.id}`;
     const entries = fields.entries.map((entry, index) => {
-      if (!entry || typeof entry !== 'object' || Array.isArray(entry) || !String(entry.name || '').trim()) throw new Error('世界书条目需要填写名称');
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry) || !String(entry.name || '').trim() || String(entry.name).trim().length > 160) throw new Error('世界书条目名称需填写且不能超过 160 个字符');
+      const content = smartImportTextValue(entry.content, 200000, '世界书条目正文');
       const refs = Array.isArray(entry.scoped_characters) ? entry.scoped_characters : [];
       const scoped = refs.flatMap(ref => { const matches = characterIds.get(String(ref).trim().toLocaleLowerCase()) || []; return matches.length === 1 ? matches : []; });
       const keywords = Array.isArray(entry.keywords) ? entry.keywords.filter(value => typeof value === 'string') : [];
-      return { id: `smart-import-entry-${draft.id}-${index}`, name: String(entry.name).trim().slice(0, 160), content: String(entry.content || ''), enabled: true, trigger_mode: keywords.length ? 'keyword' : 'always', keywords, insertion_position: 'before_character', priority: index, scope_type: scoped.length ? 'character' : 'global', category_ids: [categoryId], scoped_character_ids: [...new Set(scoped)], scoped_conversation_ids: [], import_metadata: {} };
+      if (keywords.length > 200 || keywords.some(value => value.length > 200)) throw new Error('每条世界书关键词最多 200 个且单个不超过 200 个字符');
+      return { id: `smart-import-entry-${draft.id}-${index}`, name: String(entry.name).trim(), content, enabled: true, trigger_mode: keywords.length ? 'keyword' : 'always', keywords, insertion_position: 'before_character', priority: index, scope_type: scoped.length ? 'character' : 'global', category_ids: [categoryId], scoped_character_ids: [...new Set(scoped)], scoped_conversation_ids: [], import_metadata: {} };
     });
-    payload.worldbooks.push({ package_id: packageId, payload: { format: 'neon-tavern-worldbook', version: 1, worldbook: { name, description: String(fields.description || ''), enabled: true }, categories: [{ id: categoryId, name: 'AI 导入条目', parent_id: null, position: 0 }], entries } });
+    payload.worldbooks.push({ package_id: packageId, payload: { format: 'neon-tavern-worldbook', version: 1, worldbook: { name, description, enabled: true }, categories: [{ id: categoryId, name: 'AI 导入条目', parent_id: null, position: 0 }], entries } });
   }
   if (!payload.characters.length && !payload.worldbooks.length) throw new Error('请至少保留一条可导入草稿');
   return payload;
@@ -107,7 +116,15 @@ $('#smartImportDrafts').addEventListener('change', event => {
     smartImportInvalidatePreview();
   } else if (field) smartImportEdit(Number(field.dataset.index), 'entries', field.value);
 });
+function smartImportSourceChanged() {
+  smartImportInvalidatePreview();
+  $('#smartImportResults').hidden = true;
+  $('#smartImportStatus').textContent = '输入已更改，请重新识别后再检查导入内容。';
+}
+$('#smartImportText').addEventListener('input', smartImportSourceChanged);
+$('#smartImportFile').addEventListener('change', smartImportSourceChanged);
 $('#smartImportAnalyze').addEventListener('click', async () => {
+  if (state.readOnly) { $('#smartImportStatus').textContent = '管理员只读查看中，不能使用智能导入。'; return; }
   const button = $('#smartImportAnalyze');
   const file = $('#smartImportFile').files?.[0];
   const text = $('#smartImportText').value;
@@ -115,28 +132,37 @@ $('#smartImportAnalyze').addEventListener('click', async () => {
   if (!file && !text.trim()) { $('#smartImportStatus').textContent = '请粘贴文字或选择一个文件。'; return; }
   const body = file ? new FormData() : { text };
   if (file) body.append('file', file);
+  smartImportInvalidatePreview();
+  const revision = smartImportState.revision;
   button.disabled = true;
+  $('#smartImportResults').hidden = true;
+  $('#smartImportValidate').disabled = true;
   $('#smartImportStatus').textContent = '正在读取并识别，请稍候…';
   try {
     const result = await api('/api/smart-import/preview/', { method: 'POST', body });
+    if (revision !== smartImportState.revision) { $('#smartImportStatus').textContent = '输入已更改，已忽略过期的识别结果。请重新识别。'; return; }
     smartImportState.drafts = result.drafts.map(draft => ({ ...draft, fields: { ...(draft.fields || {}) }, skipped: draft.type === 'unknown' }));
     smartImportState.payload = result.payload;
-    smartImportState.preview = null;
+    smartImportState.revision += 1;
     $('#smartImportResults').hidden = false;
+    $('#smartImportValidate').disabled = false;
     $('#smartImportBundlePreview').hidden = true;
     $('#smartImportConfirm').hidden = true;
     smartImportRenderDrafts();
     $('#smartImportStatus').textContent = `识别完成，找到 ${result.drafts.length} 条草稿。请检查后继续。`;
     if (result.warnings?.length) $('#smartImportFinalWarnings').innerHTML = `<b>识别提示</b><div style="margin-top:6px">${result.warnings.map(h).join('<br>')}</div>`, $('#smartImportFinalWarnings').hidden = false;
     else $('#smartImportFinalWarnings').hidden = true;
-  } catch (error) { $('#smartImportStatus').textContent = `识别失败：${error.message}。输入内容仍保留，可修改后重试。`; }
-  finally { button.disabled = false; }
+  } catch (error) { if (revision === smartImportState.revision) $('#smartImportStatus').textContent = `识别失败：${error.message}。输入内容仍保留，可修改后重试。`; }
+  finally { button.disabled = false; $('#smartImportValidate').disabled = false; }
 });
 $('#smartImportValidate').addEventListener('click', async () => {
+  if (state.readOnly) { $('#smartImportStatus').textContent = '管理员只读查看中，不能导入素材。'; return; }
   const button = $('#smartImportValidate'); button.disabled = true;
   try {
     const payload = smartImportBuildPayload();
+    const revision = smartImportState.revision;
     const preview = await api('/api/bundles/import/preview/', { method: 'POST', body: { payload } });
+    if (revision !== smartImportState.revision) { $('#smartImportStatus').textContent = '草稿已更改，已忽略过期的检查结果，请重新检查。'; return; }
     smartImportState.payload = payload; smartImportState.preview = preview;
     $('#smartImportBundlePreview').innerHTML = `<b>导入检查</b><div style="margin-top:6px">${preview.counts.characters} 张角色卡 · ${preview.counts.worldbooks} 本世界书 · ${preview.counts.worldbook_entries} 个条目</div>${(preview.warnings || []).length ? `<div class="bundle-warning">${preview.warnings.map(h).join('<br>')}</div>` : ''}`;
     $('#smartImportBundlePreview').hidden = false;
@@ -146,6 +172,7 @@ $('#smartImportValidate').addEventListener('click', async () => {
   finally { button.disabled = false; }
 });
 $('#smartImportConfirm').addEventListener('click', async () => {
+  if (state.readOnly) { $('#smartImportStatus').textContent = '管理员只读查看中，不能导入素材。'; return; }
   if (!smartImportState.preview || !smartImportState.payload) return;
   const button = $('#smartImportConfirm'); button.disabled = true;
   try {
@@ -677,6 +704,7 @@ function closeSettingsPanels() {
 window.showConversations = () => { closeSettingsPanels(); state.current = null; state.replyActorId = null; original.showConversations(); $('.header .title').textContent = '霓虹酒馆'; $('.env span').innerHTML = '<i class="dot"></i>我的故事'; refreshLists().catch(fail); };
 window.closeChat = window.showConversations;
 window.openPanel = id => { closeSettingsPanels();
+  if (id === 'smartImport' && state.readOnly) return window.toast('管理员只读查看中，不能使用智能导入');
   original.showConversations();
   if (id === 'characters' || id === 'materials' || id === 'account' || id === 'smartImport') original.openPanel(id);
   if (id === 'materials') loadMarket();

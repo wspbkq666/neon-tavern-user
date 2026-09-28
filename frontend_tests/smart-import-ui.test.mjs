@@ -29,6 +29,7 @@ test('drafts can change category and be skipped before final import', async () =
   assert.match(script, /data-smart-import-type/);
   assert.match(script, /data-smart-import-skip/);
   assert.match(script, /smartImportBuildPayload/);
+  assert.match(script, /draft\.unmapped_fields/);
 });
 
 test('preview stages the model result and bundle validation before explicit commit', async () => {
@@ -39,6 +40,8 @@ test('preview stages the model result and bundle validation before explicit comm
   assert.ok(analyze >= 0 && bundlePreview > analyze && commit > bundlePreview);
   assert.match(script, /smartImportConfirm/);
   assert.match(script, /smartImportState\.preview/);
+  assert.match(script, /revision !== smartImportState\.revision/);
+  assert.match(script, /不能超过/);
 });
 
 test('the form supports failed request recovery and displays Chinese warnings', async () => {
@@ -50,4 +53,13 @@ test('the form supports failed request recovery and displays Chinese warnings', 
   assert.match(script, /识别失败/);
   assert.match(script, /finally/);
   assert.match(script, /smartImportText/);
+  assert.match(script, /管理员只读查看中，不能使用智能导入/);
+});
+
+test('source edits invalidate pending model responses even before drafts exist', async () => {
+  const script = await read('frontend_dist/assets/prototype-app.js');
+  const handler = script.match(/function smartImportSourceChanged\(\) \{([\s\S]*?)\n\}/);
+  assert.ok(handler);
+  assert.match(handler[1], /smartImportInvalidatePreview\(\)/);
+  assert.doesNotMatch(handler[1], /if\s*\(!smartImportState\.drafts\.length\)/);
 });
