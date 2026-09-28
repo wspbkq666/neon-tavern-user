@@ -1,6 +1,6 @@
 import { api } from './common.js';
 
-const PRIVACY_POLICY_VERSION = '2026-09-25-dr2';
+const PRIVACY_POLICY_VERSION = '2026-09-28-central-chat-v1';
 const USAGE_RULES_VERSION = '1.0';
 const sessionReady = api('/api/auth/me/');
 sessionReady.then(session => {
