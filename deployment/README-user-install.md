@@ -12,12 +12,12 @@
 
 ## 一条命令启动
 
-用户版仓库公开发布并创建固定版本后，将 `OWNER`、`USER_REPO` 和 `RELEASE_SHA` 替换为该公开仓库及完整 commit SHA：
+当前用户版发行提交：`8daac40a728127e333dd67cf488c7cfb36dba0ac`。以下命令固定安装该发行版本：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/OWNER/USER_REPO/RELEASE_SHA/deployment/bootstrap.sh" \
-  | sudo env NEON_TAVERN_USER_REPO_URL="https://github.com/OWNER/USER_REPO.git" \
-      NEON_TAVERN_RELEASE_SHA="RELEASE_SHA" bash
+curl -fsSL "https://raw.githubusercontent.com/wspbkq666/neon-tavern-user/8daac40a728127e333dd67cf488c7cfb36dba0ac/deployment/bootstrap.sh" \
+  | sudo env NEON_TAVERN_USER_REPO_URL="https://github.com/wspbkq666/neon-tavern-user.git" \
+      NEON_TAVERN_RELEASE_SHA="8daac40a728127e333dd67cf488c7cfb36dba0ac" bash
 ```
 
 bootstrap 通过 Git 检出固定 commit，不下载压缩包或远程打包文件。随后安装器会先只读检查系统、DNS、监听端口、Web 服务、Nginx 域名、systemd 单元和目标目录，再显示变更摘要。只有输入“安装”后才会安装 apt 依赖、写入本站文件或操作本站服务。
@@ -56,3 +56,4 @@ bootstrap 通过 Git 检出固定 commit，不下载压缩包或远程打包文�
 - 登录页健康检查失败：查看 `journalctl -u neon-tavern-user-web -u neon-tavern-user-worker` 与 Nginx error log；保留备份，不要删除数据目录。
 
 安装器不提供破坏式卸载。不要手工删除 `/var/lib/neon-tavern-user/` 或备份目录。
+
