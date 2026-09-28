@@ -1,0 +1,4 @@
+Django==5.2.17
+cryptography==46.0.7
+gunicorn==24.1.1
+httpx==0.28.1

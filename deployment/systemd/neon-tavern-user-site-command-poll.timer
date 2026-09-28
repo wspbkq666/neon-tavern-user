@@ -1,0 +1,10 @@
+[Unit]
+Description=每 30 秒轮询霓虹酒馆用户版总站命令
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+Unit=neon-tavern-user-site-command-poll.service
+
+[Install]
+WantedBy=timers.target

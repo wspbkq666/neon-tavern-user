@@ -1,0 +1,23 @@
+[Unit]
+Description=霓虹酒馆用户版 Web 服务
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/neon-tavern-user/current
+EnvironmentFile=/etc/neon-tavern-user/environment
+ExecStartPre=/opt/neon-tavern-user/current/venv/bin/python manage.py enroll_site
+ExecStart=/opt/neon-tavern-user/current/venv/bin/gunicorn tavern.wsgi:application --bind 127.0.0.1:18087 --workers 1 --threads 4 --timeout 120 --access-logfile - --error-logfile -
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/neon-tavern-user
+
+[Install]
+WantedBy=multi-user.target

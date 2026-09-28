@@ -1,0 +1,31 @@
+{
+  "name": "星港 Lore",
+  "description": "Representative SillyTavern world info",
+  "entries": {
+    "0": {
+      "uid": 17,
+      "key": ["星港", "orbital"],
+      "keysecondary": ["码头"],
+      "comment": "港口规则",
+      "content": "欢迎来到星港。<script>alert('inert')</script>",
+      "disable": false,
+      "constant": false,
+      "selective": true,
+      "order": 42,
+      "position": 0,
+      "probability": 75
+    },
+    "1": {
+      "uid": 18,
+      "key": [],
+      "keysecondary": [],
+      "comment": "Always active",
+      "content": "Keep the airlocks closed.",
+      "disable": true,
+      "constant": true,
+      "selective": false,
+      "order": 9,
+      "position": 1
+    }
+  }
+}

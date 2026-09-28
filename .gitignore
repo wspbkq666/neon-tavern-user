@@ -1,0 +1,13 @@
+.env
+*.sqlite3
+*.db
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+media/
+collected_static/
+dr-replica/
+dr-snapshots/
+dr-*.json
+dr-*.lock

@@ -1,0 +1,17 @@
+[Unit]
+Description=霓虹酒馆灾备仲裁租约检查
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/neon-tavern-app/current/backend
+EnvironmentFile=/etc/neon-tavern-dr.env
+ExecStart=/srv/neon-tavern-app/venv/bin/python manage.py poll_dr_lease
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/neon-tavern

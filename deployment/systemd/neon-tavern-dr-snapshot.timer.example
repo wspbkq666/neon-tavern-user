@@ -1,0 +1,11 @@
+[Unit]
+Description=每小时执行霓虹酒馆灾备复制
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=2m
+Persistent=true
+Unit=neon-tavern-dr-snapshot.service
+
+[Install]
+WantedBy=timers.target

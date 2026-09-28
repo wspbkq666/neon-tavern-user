@@ -1,0 +1,26 @@
+[Unit]
+Description=霓虹酒馆独立灾备仲裁服务
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=neon-witness
+Group=neon-witness
+WorkingDirectory=/srv/neon-tavern-witness/app/backend/witness
+EnvironmentFile=/etc/neon-tavern-witness.env
+Environment=PYTHONPATH=/srv/neon-tavern-witness/app/backend
+ExecStart=/srv/neon-tavern-witness/venv/bin/gunicorn tavern_witness.wsgi:application --bind 0.0.0.0:443 --certfile ${WITNESS_TLS_CERT} --keyfile ${WITNESS_TLS_KEY} --workers 2 --timeout 30
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/neon-tavern-witness
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

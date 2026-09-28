@@ -1,0 +1,11 @@
+[Unit]
+Description=每 15 秒检查霓虹酒馆灾备仲裁租约
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=15s
+AccuracySec=1s
+Unit=neon-tavern-dr-lease-poll.service
+
+[Install]
+WantedBy=timers.target

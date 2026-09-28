@@ -1,0 +1,20 @@
+[Unit]
+Description=霓虹酒馆到独立 Witness 的本机 SSH 隧道
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/ssh -F /dev/null -N -T -L 127.0.0.1:43111:127.0.0.1:443 -p 43653 -i /etc/neon-tavern-dr/witness_tunnel_ed25519 -o BatchMode=yes -o ExitOnForwardFailure=yes -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/etc/neon-tavern-dr/witness_known_hosts -o HostKeyAlias=neon-witness root@111.170.14.91
+Restart=always
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/etc/neon-tavern-dr
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

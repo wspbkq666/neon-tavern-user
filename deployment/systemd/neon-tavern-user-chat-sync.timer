@@ -1,0 +1,10 @@
+[Unit]
+Description=每 30 秒同步霓虹酒馆用户版数据
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+Unit=neon-tavern-user-chat-sync.service
+
+[Install]
+WantedBy=timers.target

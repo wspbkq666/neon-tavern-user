@@ -1,0 +1,9 @@
+{
+  "edition": "user",
+  "global_admin_code": "excluded",
+  "federation_required": true,
+  "federation_centers": [
+    "154.222.26.47",
+    "123.56.125.209"
+  ]
+}

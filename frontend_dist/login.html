@@ -1,0 +1,124 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>霓虹酒馆 · 登录</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+body{background:#eef8fd;color:#29485b}
+.page{min-height:100dvh;display:flex;flex-direction:column;padding:calc(38px + env(safe-area-inset-top,0px)) 18px calc(22px + env(safe-area-inset-bottom,0px))}
+.brand{display:flex;align-items:center;gap:13px;margin:18px 4px 31px}
+.logo{width:58px;height:58px;border-radius:20px;background:linear-gradient(145deg,#ccecfb,#e7f7ff);border:1px solid #d4ebf7;display:grid;place-items:center;box-shadow:0 9px 24px rgba(79,146,184,.12)}
+.logo svg{width:34px;height:34px;fill:#63a5ca}
+.brand h1{font-size:23px;margin:0;font-weight:850;letter-spacing:.5px}.brand p{font-size:12px;color:#8fa6b5;margin:5px 0 0}
+.card{background:rgba(255,255,255,.96);border:1px solid #e0edf5;border-radius:25px;padding:20px 17px;box-shadow:0 12px 36px rgba(73,132,168,.08)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:#f0f7fb;border-radius:14px;padding:4px;margin-bottom:20px}
+.tab{height:38px;border:0;border-radius:11px;background:transparent;color:#8ba0ae;font-size:14px;font-weight:700}.tab.active{background:#fff;color:#4b8db5;box-shadow:0 3px 10px rgba(65,122,157,.09)}
+.form{display:none}.form.active{display:block}
+.field{display:block;margin-bottom:14px}.field span{display:block;font-size:12px;font-weight:700;margin:0 2px 7px;color:#526f81}
+.field input{width:100%;height:48px;border:1px solid #dceaf3;border-radius:15px;background:#f8fbfd;padding:0 13px;outline:none;font-size:16px;color:#314e60}
+.field input:focus{border-color:#8dc6e6;background:#fff}
+.password-wrap{position:relative}.password-wrap input{padding-right:56px}.showpass{position:absolute;right:7px;top:6px;height:36px;border:0;background:transparent;color:#77a3bc;font-size:12px}
+.options{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 18px;font-size:11px;color:#91a5b2}.remember{display:flex;align-items:center;gap:6px}.remember input{width:17px;height:17px}.forgot{border:0;background:transparent;color:#659fc0;padding:4px}
+.primary{width:100%;height:50px;border:0;border-radius:16px;background:#6db2d8;color:#fff;font-size:15px;font-weight:800;box-shadow:0 8px 19px rgba(67,145,189,.18)}
+.tip{text-align:center;color:#9aadb9;font-size:11px;line-height:1.6;margin:17px 7px 0}
+.register-note{padding:11px 12px;background:#f2f9fd;border-radius:13px;color:#7895a7;font-size:11px;line-height:1.55;margin-bottom:15px}
+.policy-consent{display:flex;align-items:flex-start;gap:8px;margin:4px 2px 14px;color:#6d8796;font-size:11px;line-height:1.6}.policy-consent input{margin-top:3px;accent-color:#60a9cf}.policy-consent button{padding:0;border:0;background:transparent;color:#438db5;font:inherit;text-decoration:underline}
+.policy-dialog{width:min(560px,calc(100% - 28px));max-height:min(78dvh,680px);padding:0;border:1px solid #d9eaf2;border-radius:16px;color:#29485b;box-shadow:0 18px 55px #24475c35}.policy-dialog::backdrop{background:#142a3880}.policy-head{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#fff;border-bottom:1px solid #e5eef3}.policy-head h2{margin:0;font-size:17px}.policy-close{width:32px;height:32px;border:0;border-radius:50%;background:#f0f7fa;color:#5c8295;font-size:20px}.policy-body{padding:4px 18px 20px;font-size:12px;line-height:1.8;color:#5b7482}.policy-body h3{margin:18px 0 6px;color:#31586c;font-size:13px}
+.policy-update[hidden]{display:none}.policy-update h2{font-size:17px;margin:0 0 8px}.policy-update p{font-size:12px;line-height:1.7;color:#78909e}.policy-update .secondary{width:100%;margin-top:8px;padding:10px;border:0;background:transparent;color:#78909e}
+.footer{margin-top:auto;text-align:center;padding-top:25px;color:#a5b5bf;font-size:10px}
+@media(min-width:600px){.page{max-width:430px;margin:auto}}
+</style>
+</head>
+<body data-dr-enabled="{{ dr_enabled|yesno:'true,false' }}" data-dr-standby-status-url="{{ dr_standby_status_url }}" data-dr-standby-node-id="{{ dr_standby_node_id }}" data-dr-standby-origin="{{ dr_standby_origin }}">
+<main class="page">
+  <div class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M13 16h38a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H34l-10 8v-8H13a5 5 0 0 1-5-5V21a5 5 0 0 1 5-5zm9 12a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm20 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>
+    </div>
+    <div><h1>霓虹酒馆</h1><p>登录后继续你的故事</p></div>
+  </div>
+
+  <section class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login',this)">登录</button>
+      <button class="tab" onclick="switchTab('register',this)">注册</button>
+    </div>
+
+    <div id="login" class="form active">
+      <label class="field"><span>账号</span><input autocomplete="username" placeholder="请输入账号"></label>
+      <label class="field"><span>密码</span><div class="password-wrap"><input id="loginPwd" type="password" autocomplete="current-password" placeholder="请输入密码"><button class="showpass" type="button" onclick="togglePwd('loginPwd',this)">显示</button></div></label>
+      <div class="options"><label class="remember"><input type="checkbox">记住登录</label></div>
+      <p class="auth-error" id="loginError" role="alert" hidden></p>
+      <button class="primary" id="loginSubmit" type="button">登录</button>
+      <div class="tip">登录后首先进入你的对话列表，不会直接进入某一段聊天。</div>
+    </div>
+
+    <div id="register" class="form">
+      <div class="register-note">创建账号后，你的角色卡和对话会保存在自己的账号中。</div>
+      <label class="field"><span>账号</span><input autocomplete="username" placeholder="设置一个登录账号"></label>
+      <label class="field"><span>密码</span><div class="password-wrap"><input id="regPwd" type="password" autocomplete="new-password" placeholder="设置登录密码"><button class="showpass" type="button" onclick="togglePwd('regPwd',this)">显示</button></div></label>
+      <label class="field"><span>确认密码</span><input type="password" autocomplete="new-password" placeholder="再输入一次密码"></label>
+      <label class="policy-consent"><input id="policyConsent" type="checkbox" required><span>我已阅读并同意<button type="button" data-policy-dialog="privacyPolicyDialog">《隐私协议》</button>和<button type="button" data-policy-dialog="usageRulesDialog">《用户使用规则》</button></span></label>
+      <p class="auth-error" id="registerError" role="alert" hidden></p>
+      <button class="primary" id="registerSubmit" type="button" disabled>创建账号</button>
+    </div>
+
+    <div class="policy-update" id="policyUpdateRequired" hidden>
+      <h2>隐私协议与使用规则已更新</h2>
+      {% if dr_enabled %}
+      <p>为启用双站异地恢复，请先阅读并确认。本站数据库和上传文件（包括账号、角色卡、世界书及对话）会每小时加密复制到另一台霓虹酒馆服务器，仅用于本站故障后的恢复。最近一小时尚未复制的数据可能无法恢复；切换后需要重新登录。</p>
+      {% else %}
+      <p>请先阅读并确认当前版本的隐私协议和用户使用规则，之后才能继续使用本站。</p>
+      {% endif %}
+      <label class="policy-consent"><input id="policyUpdateConsent" type="checkbox"><span>我已阅读并同意<button type="button" data-policy-dialog="privacyPolicyDialog">《隐私协议》</button>和<button type="button" data-policy-dialog="usageRulesDialog">《用户使用规则》</button></span></label>
+      <p class="auth-error" id="policyUpdateError" role="alert" hidden></p>
+      <button class="primary" id="policyUpdateSubmit" type="button" disabled>确认并继续</button>
+      <button class="secondary" type="button" id="policyUpdateLogout">退出登录</button>
+    </div>
+  </section>
+
+  <div class="footer">管理员入口与普通用户登录分开，不在这里显示。</div>
+</main>
+<dialog class="policy-dialog" id="privacyPolicyDialog" aria-labelledby="privacyPolicyTitle">
+  <div class="policy-head"><h2 id="privacyPolicyTitle">隐私协议</h2><button class="policy-close" type="button" data-close-dialog aria-label="关闭">×</button></div>
+  <article class="policy-body">
+    <p>版本：2026-09-28-central-chat-v1</p>
+    <p>本站账号信息和你创建的角色卡、世界书、对话及设置用于提供霓虹酒馆功能。</p>
+    <p>本站与其他霓虹酒馆站点相互独立。账号、角色卡、世界书、对话和设置由本站保存，不会合并为同一个账号。</p>
+    <h3>总站监管与私聊审查</h3>
+    <p>本站是受监管分站，必须连接霓虹酒馆总站 154 和 123。为执行跨站账号管理与内容审查，账号目录及你在确认本协议后新增或修改的完整私聊消息（包括角色发言、动作、旁白、导演内容和状态记录）会通过加密连接分别同步到两个总站，并在总站长期保存。总站授权管理员可查看相关私聊记录；系统会进行后台自动检测，命中内容进入人工复核。删除本站私聊不会自动删除总站留存副本；你可联系全局管理员提出处理申请。</p>
+    {% if dr_enabled %}<h3>异地恢复</h3>
+    <p>为降低服务器故障造成的数据损失，本站数据库和上传文件每小时加密复制到另一台霓虹酒馆服务器。备份包括账号数据、角色卡、世界书、对话和已上传文件，仅用于故障恢复；见证节点只负责确认当前主站，不保存这些内容。</p>
+    <p>两站最多相差一个同步周期。最近一次成功复制之后产生的内容，可能无法在故障切换后恢复。切换到备用站后，由于网站地址不同，你需要重新登录。</p>
+    {% endif %}
+    <h3>模型服务</h3>
+    <p>当你配置并使用 AI 模型时，相关请求内容会发送至你选择的模型服务商处理。请勿提交不必要的敏感个人信息。</p>
+  </article>
+</dialog>
+<dialog class="policy-dialog" id="usageRulesDialog" aria-labelledby="usageRulesTitle">
+  <div class="policy-head"><h2 id="usageRulesTitle">用户使用规则</h2><button class="policy-close" type="button" data-close-dialog aria-label="关闭">×</button></div>
+  <article class="policy-body">
+    <p>请遵守适用法律法规，不上传或传播违法、有害、侵犯他人权益的内容。本站账号目录和你同意后产生的私聊内容会同步至 154、123 两个总站接受管理与后台审查，相关副本长期保留。</p>
+    <p>你应妥善保管账号和模型服务密钥，并对通过账号进行的操作负责。</p>
+    {% if dr_enabled %}<p>异地备份是为了恢复服务，不替代你自己的重要数据备份。删除本站数据后，删除会在后续同步周期传播到备用站。</p>{% endif %}
+  </article>
+</dialog>
+<script>
+function switchTab(id,btn){
+ document.querySelectorAll('.form').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+ document.getElementById(id).classList.add('active');btn.classList.add('active');
+}
+function togglePwd(id,btn){
+ const x=document.getElementById(id);const show=x.type==='password';x.type=show?'text':'password';btn.textContent=show?'隐藏':'显示';
+}
+</script>
+<style>.auth-error{font-size:12px;color:#b35750;margin:0 0 12px;line-height:1.5}</style>
+<script type="module" src="{% static 'assets/prototype-login.js' %}"></script>
+<script type="module" src="{% static 'assets/disaster-recovery.js' %}?v=20260925-ha"></script>
+</body>
+</html>
+

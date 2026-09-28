@@ -1,0 +1,1591 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#eef8fd">
+<title>霓虹酒馆 · 移动端</title>
+<style>
+:root{--bg:#eef8fd;--white:#fff;--blue:#5bb9e5;--blue2:#e2f5ff;--deep:#318fca;--text:#193346;--muted:#8399a6;--line:#dcecf4;--shadow:0 7px 24px rgba(54,119,151,.09)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#dbeaf2;color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+body{display:flex;justify-content:center}
+.phone{width:390px;height:100dvh;position:relative;overflow:hidden;background:var(--bg);box-shadow:0 0 55px #31596b2a}
+@media(max-width:430px){body{background:var(--bg)}.phone{width:100%;box-shadow:none}}
+.app{height:100%;display:flex;flex-direction:column;position:relative}
+.header{height:73px;padding:14px 16px 10px;background:#ffffffde;backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.head{display:flex;align-items:center;justify-content:space-between}.eyebrow{font-size:9px;letter-spacing:1.7px;color:#72a8c2;font-weight:800}.title{font-size:19px;font-weight:800}.actions{display:flex;gap:6px}.circle{width:38px;height:38px;border-radius:50%;background:white;border:1px solid var(--line);color:#6f95a8}
+.env{height:34px;display:flex;align-items:center;padding:0 15px;color:#8499a5;font-size:10px;border-bottom:1px solid var(--line);background:#f9fcfd}.env b{margin-left:auto;color:#4ca5cd;font-weight:700}.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#62c6e8;margin-right:6px}
+.content{flex:1;overflow:auto;padding:13px 13px 11px}
+.banner{padding:14px 15px;border-radius:23px;background:linear-gradient(135deg,#ddf4ff,#fbfdff);border:1px solid #cdeaf7;box-shadow:var(--shadow);margin-bottom:15px}.banner strong{font-size:14px}.banner span{float:right;color:#78a1b4;font-size:9px}.banner p{margin:5px 0 0;color:#79929f;font-size:10px}
+.msg{margin-bottom:17px}.meta{font-size:9px;color:#879ca8;margin:0 5px 5px}.narr{font:italic 14px/1.8 Georgia,serif;color:#82949f;padding:0 6px;margin:0}.bubble{padding:12px 13px;border-radius:20px 20px 20px 7px;background:white;border:1px solid var(--line);box-shadow:var(--shadow)}.bubble.player{margin-left:33px;border-radius:20px 20px 7px 20px;background:var(--blue2);border-color:#c8e9f6}.bubble p{font-size:13px;line-height:1.65;margin:0}.action{font-size:10px;color:#7b97a6;margin-top:6px}.ooc{padding:9px 11px;border-radius:15px;border:1px dashed #bed1db;background:#f7fafb;color:#728995;font-size:10px}
+.composer{padding:8px 10px;background:#f8fcfe;border-top:1px solid var(--line)}.modes{display:flex;gap:5px;margin-bottom:6px;overflow:auto}.mode{white-space:nowrap;border:1px solid var(--line);border-radius:13px;background:#fff;color:#8296a2;padding:5px 9px;font-size:9px}.mode.active{background:var(--blue2);border-color:#bde4f4;color:#318fca;font-weight:700}.input{display:flex;gap:6px;align-items:center}textarea{height:42px;min-width:0;flex:1;border:1px solid var(--line);border-radius:17px;background:#fff;padding:10px 11px;resize:none;outline:none;font-size:11px}.send,.gen{height:42px;border-radius:16px;font-weight:800}.send{padding:0 10px;color:#4d94b4;background:#e8f6fc;border:1px solid #cce8f3}.gen{width:43px;background:#55b7e2;color:#fff;box-shadow:0 5px 14px #55b7e240}
+.bottom{position:absolute;left:0;right:0;bottom:0;z-index:25;height:62px;display:flex;padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);box-shadow:0 -5px 18px #41738c0a}.tab{flex:1;border-radius:17px;color:#8da1ac;font-size:9px}.tab span{display:block;font-size:20px;line-height:21px}.tab.active{background:#e3f5fe;color:#348fc6;font-weight:800}
+.overlay{position:absolute;inset:0;background:#17394a28;backdrop-filter:blur(3px);z-index:10;display:none}.overlay.open{display:block}.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:27px 27px 0 0;padding:9px 14px calc(15px + env(safe-area-inset-bottom));max-height:86%;overflow:auto}.handle{height:4px;width:34px;border-radius:8px;background:#d6e3e9;margin:0 auto 13px}.sheet h2{font-size:19px;margin:0 0 12px}.role{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--line);border-radius:18px;margin-bottom:7px}.avatar{width:42px;height:42px;border-radius:14px;background:#e5f5fc;border:1px solid #cde9f4;display:grid;place-items:center;color:#4c9bc0;font-weight:800}.role small{display:block;color:#8ea0aa;font-size:9px}.check{margin-left:auto;width:19px;height:19px;border-radius:7px;border:1px solid #c5d9e3}.checked{background:#55b7e2;border-color:#55b7e2}.sheet-buttons{display:flex;gap:6px;margin-top:11px}.sheet-buttons button{height:42px;flex:1;border-radius:16px;border:1px solid var(--line);background:#f7fafc}.primary{background:#55b7e2!important;color:white;border-color:#55b7e2!important}
+.panel{position:absolute;inset:0;background:var(--bg);z-index:11;display:none;overflow:auto;padding-bottom:72px}.panel.open{display:block}.panel-head{height:61px;position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:0 12px;background:#ffffffea;backdrop-filter:blur(15px);border-bottom:1px solid var(--line)}.back{font-size:28px;color:#7393a2;width:34px}.panel-head h2{font-size:19px;margin:0}.card{margin:11px 12px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:13px;box-shadow:var(--shadow)}.card-head{display:flex;align-items:center;gap:9px}.card-head b{font-size:14px}.card-head small{display:block;color:#8ca0aa;font-size:9px}.bar{height:5px;border-radius:8px;background:#eaf1f5;margin-top:5px}.bar i{height:100%;display:block;border-radius:8px;background:#63bfe8}.tags span{display:inline-block;margin:7px 4px 0 0;padding:4px 8px;border-radius:12px;background:#e8f6fd;color:#5596b5;font-size:9px}
+.admin{position:absolute;inset:0;background:var(--bg);z-index:35;display:none;overflow:auto;padding-bottom:72px}.admin.open{display:block}.user{margin:9px 12px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px;display:flex;align-items:center;gap:9px;box-shadow:var(--shadow)}.user small{display:block;color:#91a2ab;font-size:9px}.enter{margin-left:auto;border:0;border-radius:13px;padding:8px 9px;background:var(--blue2);color:#388eb4;font-size:9px;font-weight:800}
+.viewbar{position:absolute;left:0;right:0;top:0;height:29px;z-index:30;background:#dff3ff;color:#3d87a8;font-size:9px;display:none;align-items:center;justify-content:center}.viewbar.show{display:flex}.viewbar button{margin-left:8px;color:#327795;font-weight:800}
+.login{position:absolute;inset:0;background:var(--bg);z-index:35;display:none;padding:16px}.login.open{display:block}.login-card{margin-top:90px;background:#fff;border:1px solid var(--line);border-radius:27px;padding:20px;box-shadow:var(--shadow)}.login h1{font-size:25px;margin:0}.login p{color:#8398a4;font-size:10px}.field{margin-top:10px}.field label{display:block;color:#78909e;font-size:9px;margin-bottom:4px}.field input{width:100%;height:42px;border:1px solid var(--line);border-radius:15px;padding:10px;outline:none}.login-btn{width:100%;height:43px;border-radius:16px;background:#55b7e2;color:#fff;font-weight:800;margin-top:14px;border:0}
+.toast{position:absolute;z-index:50;left:50%;bottom:82px;transform:translateX(-50%);background:#244f64;color:white;padding:8px 12px;border-radius:15px;font-size:10px;display:none;white-space:nowrap}.toast.show{display:block}
+.site-update{position:fixed;inset:0;z-index:200;background:rgba(25,45,58,.34);display:grid;place-items:center;padding:20px}.site-update.optional{inset:auto 12px 76px auto;background:transparent;padding:0}.site-update-box{width:min(360px,100%);padding:18px;border-radius:20px;background:#fff;border:1px solid #d9eaf2;box-shadow:0 16px 40px rgba(31,73,94,.2)}.site-update.optional .site-update-box{box-shadow:0 8px 24px rgba(31,73,94,.18)}.site-update-box b{font-size:15px;color:#31566a}.site-update-box p{margin:7px 0 14px;color:#78919d;font-size:11px;line-height:1.55}.site-update-actions{display:flex;gap:8px}.site-update-actions button{flex:1;height:40px;border:0;border-radius:13px;background:#6fb4da;color:#fff;font-size:11px;font-weight:800}.site-update-actions button+button{background:#eef5f8;color:#668391}
+
+/* V4 conversation flow + persistent bottom navigation */
+.content{padding-bottom:78px}
+.conversation{display:flex;gap:10px;padding:13px;margin-bottom:9px;background:#fff;border:1px solid var(--line);border-radius:21px;box-shadow:var(--shadow);cursor:pointer}
+.conv-avatar{width:46px;height:46px;flex:0 0 46px;border-radius:15px;background:#e5f5fc;border:1px solid #cde9f4;display:grid;place-items:center;color:#4c9bc0;font-weight:900}
+.conv-body{min-width:0;flex:1}.conv-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.conv-top b{font-size:13px}.conv-top small{color:#9aabb4;font-size:9px}.conv-body p{margin:5px 0;color:#718995;font-size:10px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-tags span{display:inline-block;padding:3px 7px;border-radius:10px;background:#eaf7fd;color:#5798b6;font-size:8px;margin-right:4px}
+.new-conv{width:100%;height:42px;border:1px dashed #b9dbe9;border-radius:16px;background:#f8fcfe;color:#4d99bc;font-weight:800;margin-top:4px}
+.chat-title-card{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;margin-bottom:10px;background:#fff;border:1px solid var(--line);border-radius:21px;box-shadow:var(--shadow)}
+.chat-title-card strong{display:block;font-size:15px;margin-top:2px}.chat-title-card button{border:0;border-radius:13px;background:#e8f6fc;color:#418cab;padding:8px 10px;font-size:9px;font-weight:800}
+.scene-note{padding:11px 12px;border-radius:18px;background:#f5fbfe;border:1px solid #d6ebf4;color:#5f7e8c}
+.scene-note b{font-size:11px}.scene-note span{float:right;font-size:9px;color:#7d9eac}.scene-note p{margin:5px 0 0;font-size:10px;line-height:1.5;color:#78919d}
+.composer{position:relative;z-index:26}
+.composer-top{display:flex;gap:6px;align-items:center;margin-bottom:6px}.role-switch{flex:1;min-width:0;height:45px;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #cde8f3;border-radius:17px;background:#fff;padding:4px 9px;color:var(--text)}
+.mini-avatar{width:33px;height:33px;border-radius:11px;background:#e6f6fd;color:#4c9bc0;display:grid;place-items:center;font-size:10px;font-weight:900}.role-switch small{display:block;color:#8aa0aa;font-size:8px}.role-switch b{display:block;font-size:10px;margin-top:2px}.chev{margin-left:auto;color:#76a2b5;font-size:16px}
+.model-btn{height:45px;border:1px solid var(--line);border-radius:17px;background:#f7fbfd;color:#638796;padding:0 10px;font-size:9px;font-weight:800}
+.generation-sheet{max-height:88%;overflow-y:auto;-webkit-overflow-scrolling:touch}.setting-card{padding:11px;border:1px solid var(--line);border-radius:19px;background:#f9fcfd;margin-bottom:9px}.setting-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.setting-head b{font-size:11px}.setting-head span{font-size:8px;color:#8aa0aa}
+.setting-row{display:flex;gap:5px;margin-top:5px;overflow:auto}.setting-option{white-space:nowrap;border:1px solid var(--line);border-radius:12px;background:#fff;color:#7d939e;padding:6px 9px;font-size:9px}.setting-option.active{background:var(--blue2);border-color:#bde4f4;color:#318fca;font-weight:800}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.role-card{display:flex;align-items:center;gap:7px;padding:9px;border:1px solid var(--line);border-radius:16px;background:#fff;cursor:pointer;position:relative}.role-card.selected{border-color:#8fd1ea;background:#eef9fd}.role-card .avatar{width:34px;height:34px;border-radius:11px;font-size:10px}.role-card b{font-size:10px}.role-card small{display:block;color:#8da0aa;font-size:8px;margin-top:2px}.role-card i{position:absolute;right:7px;top:7px;width:15px;height:15px;border-radius:5px;background:#dcecf3;color:transparent;font-style:normal;font-size:9px;text-align:center;line-height:15px}.role-card.selected i{background:#55b7e2;color:#fff}
+.sheet-desc{margin:-4px 0 11px;color:#8299a5;font-size:9px;line-height:1.5}.role-select.selected{border-color:#9bd5e9;background:#f0faff}
+@media(max-width:430px){.bottom{height:64px}}
+
+
+/* V5 chat-focused UI */
+#chatView{padding-bottom:8px}
+.chat-title-card{margin-bottom:8px}
+.chat-title-card button{min-width:46px}
+.scene-note.compact{padding:9px 11px;margin-bottom:4px}
+.scene-line{display:flex;justify-content:space-between;align-items:center}
+.scene-line b{font-size:10px}.scene-line span{font-size:8px;color:#7e9ba8}
+.scene-note.compact p{margin:4px 0 0;font-size:9px}
+.day-divider{display:flex;align-items:center;gap:8px;margin:12px 2px 7px;color:#a2b2ba;font-size:8px}
+.day-divider:before,.day-divider:after{content:"";height:1px;background:#dceaf0;flex:1}
+.msg{display:flex;gap:7px;margin:9px 0;align-items:flex-start}
+.msg-avatar{width:31px;height:31px;flex:0 0 31px;border-radius:11px;background:#e5f6fc;color:#4b9bc0;display:grid;place-items:center;font-size:9px;font-weight:900;border:1px solid #cde8f2}
+.msg-main{max-width:82%;min-width:0}.msg .meta{display:flex;align-items:center;gap:6px;margin:0 3px 4px;color:#9aacb4;font-size:8px}.msg .meta b{color:#64818d;font-size:9px}.msg .bubble{border-radius:17px 17px 17px 6px;background:#fff;border:1px solid var(--line);box-shadow:0 5px 15px rgba(85,145,170,.06);padding:9px 11px}.msg .bubble p{margin:0;font-size:11px;line-height:1.65;color:#415a66}.msg .action{margin-top:6px;padding-top:6px;border-top:1px dashed #dbeaf0;color:#8499a2;font-size:9px;line-height:1.5}
+.player-msg{justify-content:flex-end}.player-msg .msg-main{display:flex;flex-direction:column;align-items:flex-end}.player-msg .meta{justify-content:flex-end}.player-avatar{background:#e9f4ff;border-color:#c9e0ef;color:#548eb5}.msg .bubble.player{background:#e9f7fd;border-color:#c9e8f3;border-radius:17px 17px 6px 17px}
+.state-update{margin:10px 5px;padding:7px 9px;border-radius:12px;background:#f5fafc;border:1px solid #deedf2;color:#7c929c;font-size:8px}.state-update span{color:#5ba0bb;font-weight:900}.state-update p{margin:3px 0 0;line-height:1.45}
+.director-card{margin:11px 5px;padding:9px 10px;border-radius:15px;background:#f6f4ff;border:1px solid #e5dffc}.director-head{display:flex;justify-content:space-between;align-items:center}.director-head span{font-size:9px;color:#7666b5;font-weight:900}.director-head small{font-size:7px;color:#a197bd}.director-card p{margin:5px 0 0;font-size:9px;line-height:1.5;color:#786f91}
+.waiting{margin:8px 0 12px;padding:10px;text-align:center;border:1px dashed #c9e3ed;border-radius:16px;background:#fbfdfe}.waiting span{display:block;color:#6794a3;font-size:9px;font-weight:800}.waiting small{display:block;margin-top:3px;color:#9aabb3;font-size:7px}
+.composer{padding:7px 0 5px;background:linear-gradient(to bottom,rgba(247,251,253,.92),#f7fbfd 45%);border-top:1px solid #dcebf1}
+.composer-actions{display:flex;gap:6px;margin-bottom:6px}.role-chip{flex:1;min-width:0;height:42px;display:flex;align-items:center;gap:7px;border:1px solid #cce7f1;border-radius:16px;background:#fff;text-align:left;padding:3px 8px}.role-chip .mini-avatar{width:30px;height:30px;border-radius:10px}.role-chip small{display:block;color:#8ca1aa;font-size:7px}.role-chip b{display:block;color:#496b78;font-size:9px;margin-top:2px}.ooc-btn{height:42px;padding:0 12px;border:1px solid #d9d0f3;border-radius:16px;background:#f3efff;color:#7563b4;font-size:9px;font-weight:900;white-space:nowrap}
+.input-row{display:flex;align-items:flex-end;gap:5px}.input-row textarea{flex:1;min-height:43px;max-height:80px;border:1px solid #cde5ee;border-radius:16px;background:#fff;padding:11px 10px;font-size:10px;resize:none;outline:none}.input-row .send{height:43px;border:1px solid #bfe1ec;border-radius:15px;background:#e9f7fd;color:#438fac;padding:0 11px;font-size:9px;font-weight:900}.input-row .gen{width:43px;height:43px;border:0;border-radius:15px;background:#8d73ee;color:#fff;font-size:19px;box-shadow:0 5px 14px rgba(125,99,220,.2)}
+.ooc-editor textarea{width:100%;height:125px;box-sizing:border-box;border:1px solid #ddd5f3;border-radius:16px;background:#faf9ff;padding:11px;font-size:10px;line-height:1.6;resize:none;outline:none;color:#5c5478}
+
+
+/* V6 status-per-round + new conversation */
+.home-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.home-head h1{margin:3px 0 2px;font-size:20px}.home-head p{margin:0;color:#8aa0aa;font-size:9px}.home-count{width:30px;height:30px;border-radius:11px;background:#e8f7fd;color:#4d9bbb;display:grid;place-items:center;font-size:10px;font-weight:900}
+.new-conv-card{width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:13px;border:1px solid #bfe2ee;border-radius:21px;background:linear-gradient(135deg,#f7fdff,#eef9fd);box-shadow:0 7px 20px rgba(75,153,185,.08);margin-bottom:17px}.new-icon{width:42px;height:42px;border-radius:14px;background:#d9f1fb;color:#4b9ec2;display:grid;place-items:center;font-size:23px}.new-conv-card b{display:block;color:#3f7080;font-size:12px}.new-conv-card span{display:block;margin-top:3px;color:#8aa1aa;font-size:8px}.new-conv-card i{margin-left:auto;color:#6ca4b8;font-size:22px;font-style:normal}
+.section-label{font-size:9px;font-weight:900;color:#8499a3;margin:0 2px 7px}
+.environment-card{padding:11px 12px;border-radius:20px;background:#fff;border:1px solid #d6e9f0;box-shadow:0 5px 15px rgba(70,140,165,.05);margin-bottom:7px}.env-head{display:flex;justify-content:space-between;align-items:center}.env-head b{font-size:11px;color:#4c6874}.env-head span{font-size:8px;color:#8ea4ad}.env-desc{margin-top:5px;color:#7c929c;font-size:9px;line-height:1.55}.env-tags{margin-top:6px}.env-tags span{display:inline-block;padding:3px 7px;margin-right:4px;border-radius:10px;background:#edf8fc;color:#6b9dad;font-size:7px}
+.character-status{padding:10px 11px;border-radius:18px;background:rgba(42,31,67,.91);border:1px solid rgba(144,119,214,.22);box-shadow:0 8px 18px rgba(35,25,55,.08);color:#dcd5ed;margin:9px 0}.status-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(160,140,215,.16);padding-bottom:5px;margin-bottom:6px}.status-head span{font-size:7px;color:#8d78c4;letter-spacing:1.2px}.status-head b{font-size:11px;color:#bda9f3}.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}.status-grid div{font-size:9px;color:#a79cbf;line-height:1.4}.status-grid b{color:#eee9f6;font-size:9px;font-weight:700;margin-left:3px}.status-state{display:flex;gap:5px;align-items:center;margin-top:7px}.status-state span{font-size:8px;color:#a99fc0;margin-right:1px}.status-state i{font-style:normal;font-size:8px;color:#9e89db;background:#30264d;border:1px solid #443567;padding:4px 7px;border-radius:10px}
+.create-card{padding:13px;margin-bottom:9px;border:1px solid var(--line);border-radius:21px;background:#fff;box-shadow:var(--shadow)}.create-title{font-size:11px;font-weight:900;color:#476b78}.create-card>p{font-size:8px;color:#91a3aa;margin:4px 0 9px}.create-role{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid #e0edf1;border-radius:15px;margin-top:6px;cursor:pointer}.create-role.selected{border-color:#9bd5e9;background:#f0faff}.create-role .avatar{width:35px;height:35px;border-radius:11px}.create-role b{display:block;font-size:10px}.create-role small{display:block;color:#8da0a8;font-size:8px;margin-top:2px}.create-role>span{margin-left:auto;width:17px;height:17px;border-radius:6px;background:#e4edf1;color:transparent;text-align:center;line-height:17px;font-size:9px}.create-role.selected>span{background:#58b7df;color:#fff}.add-role{width:100%;height:34px;border:1px dashed #c5e1ea;border-radius:12px;background:#fafdfe;color:#5799b3;font-size:9px;margin-top:7px}label{display:block;font-size:8px;color:#8299a3;margin-top:8px}label input,label textarea{display:block;box-sizing:border-box;width:100%;margin-top:4px;border:1px solid #dbeaf0;border-radius:12px;background:#fbfdfe;padding:9px;font-size:9px;color:#58717d;outline:none}label textarea{height:60px;resize:none}.create-line{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #edf3f5;font-size:9px;color:#78909b}.create-line:last-child{border-bottom:0}.create-line b{color:#568da3;font-size:9px}.start-conv{width:100%;height:45px;border:0;border-radius:17px;background:#72c5e8;color:#fff;font-size:11px;font-weight:900;box-shadow:0 7px 18px rgba(83,176,215,.2);margin-bottom:20px}
+
+
+.ooc-btn span{margin-left:3px;font-size:7px;opacity:.65}.ooc-btn.on{background:#e9e4ff;border-color:#b9a9ec;color:#674fb0;box-shadow:0 0 0 2px rgba(126,99,205,.07) inset}
+
+
+/* V7 status cards: dialogue first, status second */
+.character-status{padding:10px 11px;border-radius:19px;background:linear-gradient(135deg,#f5fbfe,#edf8fc);border:1px solid #cce6ef;box-shadow:0 7px 18px rgba(70,145,172,.08);color:#607e8a;margin:9px 0}.status-head{display:flex;align-items:center;gap:7px;border-bottom:1px solid #d9ebf1;padding-bottom:6px;margin-bottom:7px}.status-head span{font-size:7px;color:#65a9c3;letter-spacing:1.1px}.status-head b{font-size:11px;color:#4b8298}.status-head small{margin-left:auto;color:#91a8b1;font-size:7px}.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 9px}.status-grid div{font-size:8px;color:#8199a3;line-height:1.45}.status-grid b{color:#4f6f7b;font-size:9px;font-weight:800;margin-left:3px}.status-state{display:flex;gap:5px;align-items:center;margin-top:8px}.status-state span{font-size:7px;color:#82a0aa;margin-right:1px}.status-state i{font-style:normal;font-size:7px;color:#5b98b0;background:#e3f3f9;border:1px solid #c8e4ee;padding:4px 7px;border-radius:10px}.character-status.current{border-color:#9ed4e6;box-shadow:0 8px 20px rgba(67,159,194,.12)}
+.extra-status{margin-top:8px;padding:7px 8px;border-radius:13px;background:#fff;border:1px solid #dbeaf0}.extra-title{display:flex;justify-content:space-between;color:#5b8da0;font-size:8px;font-weight:900;margin-bottom:4px}.extra-title span{font-size:6px;color:#9aadb5;font-weight:500}.extra-row{display:flex;gap:8px;padding:3px 0;font-size:8px}.extra-row span{width:34px;color:#9aaeb6}.extra-row b{color:#617f8a;font-weight:700}
+
+
+/* V8 character card creator + role picker scrolling */
+#roleSheet{overflow:hidden}
+#roleSheet .sheet{height:min(76%,620px);max-height:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:28px}
+#roleSheet .role-select{min-height:54px}
+.add-character-card{width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:12px;border:1px solid #bfe2ee;border-radius:20px;background:linear-gradient(135deg,#f7fdff,#eef9fd);box-shadow:0 7px 20px rgba(75,153,185,.07);margin-bottom:14px}.add-character-icon{width:40px;height:40px;border-radius:13px;background:#dff3fa;color:#4d9fbd;display:grid;place-items:center;font-size:22px}.add-character-card b{display:block;color:#416f7e;font-size:11px}.add-character-card small{display:block;color:#91a3aa;font-size:8px;margin-top:3px}.add-character-card i{margin-left:auto;font-style:normal;color:#6ca4b8;font-size:21px}
+.role-badge{margin-left:auto;padding:4px 6px;border-radius:8px;background:#edf8fc;color:#5d9db3;font-size:7px;font-weight:900}.role-badge.user{background:#e5f4ff;color:#4d91bb}
+.character-creator .panel-head{position:sticky;top:0;z-index:3;background:rgba(247,251,253,.96);backdrop-filter:blur(8px)}
+.creator-avatar{display:flex;align-items:center;gap:10px;padding:8px 0 12px}.big-avatar{width:62px;height:62px;border-radius:20px;background:#e2f5fb;border:1px solid #c5e6f0;color:#4c9bb8;display:grid;place-items:center;font-size:20px;font-weight:900}.creator-avatar button{border:1px solid #cce6ee;border-radius:12px;background:#fff;color:#5795aa;padding:7px 9px;font-size:8px}
+.field-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #edf3f5;font-size:9px;color:#657f89}.field-row button{border:1px solid #d8e9ee;border-radius:9px;background:#f7fbfd;color:#6792a2;font-size:7px;padding:4px 7px}.add-field{width:100%;height:32px;border:1px dashed #c4e1ea;border-radius:11px;background:#fbfdfe;color:#5a9bb2;font-size:8px;margin-top:8px}
+.user-control-card{border-color:#bfe1ec;background:linear-gradient(135deg,#fff,#f5fbfd)}.user-switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.user-switch-row b{display:block;font-size:10px;color:#4b6f7c}.user-switch-row small{display:block;color:#91a3aa;font-size:7px;margin-top:3px}.switch{width:45px;height:25px;border:0;border-radius:15px;background:#dce9ed;padding:3px;position:relative}.switch i{display:block;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 5px #aac0c7;transition:.18s}.switch.on{background:#72c5e8}.switch.on i{transform:translateX(20px)}.control-note{margin-top:7px;padding:6px 8px;border-radius:10px;background:#f1f8fb;color:#78949f;font-size:7px}
+.save-character{width:100%;height:44px;border:0;border-radius:16px;background:#72c5e8;color:#fff;font-size:10px;font-weight:900;margin:2px 0 20px;box-shadow:0 7px 17px rgba(83,176,215,.18)}
+
+</style>
+<style id="v9settings">
+.settings-entry{width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:12px;border:1px solid #d6e9ef;border-radius:18px;background:#fff;margin:7px 0;box-shadow:0 5px 14px rgba(70,140,165,.05)}.settings-icon{width:38px;height:38px;border-radius:13px;background:#e5f6fb;color:#579db7;display:grid;place-items:center;font-size:17px}.settings-entry b{display:block;color:#4d7180;font-size:10px}.settings-entry small{display:block;color:#91a4ac;font-size:7px;margin-top:3px}.settings-entry>span{margin-left:auto;color:#76a5b4;font-size:20px}.settings-panel{position:fixed;left:50%;transform:translateX(-50%);top:0;width:390px;max-width:100%;height:100%;background:#f7fbfd;z-index:50;display:none;overflow-y:auto;padding:0 13px 26px;box-sizing:border-box}.settings-panel.open{display:block}.settings-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:12px 0 10px;background:rgba(247,251,253,.96);backdrop-filter:blur(9px)}.settings-top button{width:32px;height:32px;border:1px solid #d6e9ef;border-radius:11px;background:#fff;color:#6a9bad;font-size:19px}.settings-top b{display:block;color:#4a6f7d;font-size:13px}.settings-top small{display:block;color:#9aadb5;font-size:6px;letter-spacing:1px;margin-top:2px}.settings-card{padding:13px;margin:8px 0;border:1px solid #d6e9ef;border-radius:20px;background:#fff;box-shadow:0 5px 15px rgba(70,140,165,.05)}.setting-title{font-size:10px;font-weight:900;color:#4c7381;margin-bottom:7px}.setting-help{font-size:8px;color:#8b9fa8;line-height:1.6;margin:0 0 8px}.test-api{margin-top:10px;width:100%;height:33px;border:1px solid #c7e5ef;border-radius:12px;background:#eff9fc;color:#5797ae;font-size:8px;font-weight:800}.select-row,.range-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #edf3f5;color:#78909b;font-size:9px}.select-row:last-child{border-bottom:0}.select-row b,.range-row b{color:#578ea4;font-size:9px}.range{width:100%;margin:5px 0 4px;accent-color:#72c5e8}.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf3f5;gap:12px}.toggle-row:last-child{border-bottom:0}.toggle-row b{display:block;color:#587480;font-size:9px}.toggle-row small{display:block;color:#99aab1;font-size:7px;margin-top:3px;line-height:1.4}.global-prompt{box-sizing:border-box;width:100%;height:155px;border:1px solid #d9eaf0;border-radius:13px;background:#fbfdfe;color:#637d88;font-size:8px;line-height:1.65;padding:9px;resize:vertical;outline:none}.safe-note{padding:8px;border-radius:11px;background:#f2f8fa;color:#7e98a3;font-size:7px;line-height:1.5}.save-settings{width:100%;height:44px;border:0;border-radius:16px;background:#72c5e8;color:#fff;font-size:10px;font-weight:900;margin:8px 0 20px;box-shadow:0 7px 17px rgba(83,176,215,.18)}@media(max-width:430px){.settings-panel{width:100%}}
+</style>
+<style>
+.detail-toggle{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  margin-top:12px;padding:14px 16px;border:0;border-radius:18px;
+  background:#f4f9ff;color:#3976aa;font-size:15px;font-weight:700;
+}
+.toggle-arrow{font-size:20px;line-height:1;transition:.2s}
+.detail-toggle.open .toggle-arrow{transform:rotate(180deg)}
+.detail-box{margin-top:8px}
+.detail-note{
+  margin:8px 2px 0;padding:13px 15px;border-radius:16px;
+  background:#f7fbff;color:#7890a4;font-size:12px;line-height:1.7;
+}
+.switch-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-top:1px solid #edf3f8;font-size:14px;
+}
+</style>
+
+<style id="mobile-unification">
+/* 移动端网页统一外壳 */
+html,body{
+  margin:0!important;
+  width:100%!important;
+  min-height:100%!important;
+  background:#edf6ff!important;
+}
+body{
+  overflow-x:hidden!important;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif!important;
+}
+*{box-sizing:border-box}
+
+/* 手机网页画布：桌面打开时也保持手机比例 */
+.app,.phone,.mobile-app,.page,.shell{
+  max-width:430px!important;
+  width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* 避免设置页变成桌面后台式布局 */
+.panel,.settings-panel,.setting-page{
+  width:100%!important;
+  max-width:100%!important;
+  border-radius:24px!important;
+}
+
+/* 设置卡片沿用酒馆主体的浅蓝、圆角、轻量阴影 */
+.setting-card{
+  background:rgba(255,255,255,.94)!important;
+  border:1px solid #e3f0fb!important;
+  border-radius:20px!important;
+  box-shadow:0 8px 24px rgba(83,145,190,.07)!important;
+}
+
+/* 详细设置只作为同一页面中的折叠区域 */
+.detail-toggle{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  border:1px solid #e1effa!important;
+  background:#f7fbff!important;
+  color:#4b82ad!important;
+  box-shadow:none!important;
+  border-radius:18px!important;
+  min-height:48px!important;
+  font-family:inherit!important;
+}
+.detail-box{
+  width:100%!important;
+}
+.detail-note{
+  background:#f3f9fe!important;
+  border:1px solid #e3f0f8!important;
+  border-radius:16px!important;
+  color:#7891a5!important;
+}
+
+/* 表单统一为移动端大触控区域 */
+.setting-row{
+  min-height:50px!important;
+  gap:12px!important;
+}
+.setting-row input,
+.setting-card input,
+.setting-card select,
+.setting-card textarea{
+  max-width:100%!important;
+  min-height:42px!important;
+  border-radius:14px!important;
+  border:1px solid #dcecf8!important;
+  background:#f8fbfe!important;
+  font-family:inherit!important;
+  font-size:14px!important;
+  outline:none!important;
+}
+.setting-row input:focus,
+.setting-card input:focus,
+.setting-card select:focus,
+.setting-card textarea:focus{
+  border-color:#91c8eb!important;
+  background:#fff!important;
+}
+.primary.full{
+  min-height:46px!important;
+  border-radius:16px!important;
+}
+
+/* 移动端底部导航始终保持固定、轻量 */
+.bottom-nav,.tabbar,.nav-bottom{
+  max-width:430px!important;
+  width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* 桌面查看时增加手机边界感，但不改变网页内部布局 */
+@media (min-width:600px){
+  body{
+    padding:18px 0!important;
+  }
+  .app,.phone,.mobile-app,.page,.shell{
+    min-height:calc(100vh - 36px)!important;
+    border-radius:30px!important;
+    overflow:hidden!important;
+    box-shadow:0 18px 60px rgba(45,103,145,.14)!important;
+  }
+}
+
+/* 小屏幕不允许任何横向溢出 */
+@media (max-width:599px){
+  body{padding:0!important}
+  .app,.phone,.mobile-app,.page,.shell{
+    min-height:100vh!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+}
+</style>
+
+<style id="true-mobile-ui-v13">
+:root{
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 页面本身就是移动端网页，不再模拟一台手机 */
+html,body{
+  width:100% !important;
+  min-width:0 !important;
+  height:100% !important;
+  min-height:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  background:var(--bg,#eef8fd) !important;
+}
+
+body{
+  display:block !important;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif !important;
+}
+
+/* 取消 390px 手机壳、圆角边框、桌面阴影 */
+.phone,
+.app,
+.shell,
+.mobile-app,
+.page{
+  width:100% !important;
+  max-width:none !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  overflow:hidden !important;
+}
+
+/* 顶部区域就是手机 App / H5 的紧凑导航 */
+.header{
+  flex:0 0 auto !important;
+  height:auto !important;
+  min-height:58px !important;
+  padding:calc(10px + env(safe-area-inset-top,0px)) 14px 9px !important;
+  border-radius:0 !important;
+}
+.head{min-height:38px !important}
+.title{font-size:18px !important}
+.eyebrow{display:none !important}
+
+/* 环境信息压成手机顶部信息条 */
+.env{
+  flex:0 0 34px !important;
+  height:34px !important;
+  padding:0 14px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+/* 主内容独立滚动 */
+.content{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  width:100% !important;
+  padding:12px 12px calc(96px + var(--safe-bottom)) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+/* 所有卡片按照手机宽度，不允许桌面双栏 */
+.banner,
+.setting-card,
+.state-card,
+.card,
+.panel,
+.sheet,
+.modal-card,
+.detail-box{
+  width:100% !important;
+  max-width:100% !important;
+}
+
+.banner{border-radius:18px !important}
+.bubble{max-width:88% !important}
+.bubble.player{
+  margin-left:auto !important;
+  max-width:88% !important;
+}
+
+/* 设置页：单列手机表单 */
+.setting-row{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:7px !important;
+  padding:10px 0 !important;
+}
+.setting-row > span{
+  width:100% !important;
+  font-size:13px !important;
+}
+.setting-row input,
+.setting-row select,
+.setting-card input,
+.setting-card select,
+.setting-card textarea{
+  width:100% !important;
+  max-width:none !important;
+  min-height:44px !important;
+  font-size:16px !important; /* 避免 iPhone 输入时自动放大 */
+}
+
+/* 弹层从底部出现，符合移动端交互 */
+.overlay,
+.modal,
+.sheet-wrap{
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  max-width:none !important;
+}
+.sheet{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  margin:0 !important;
+  max-height:82dvh !important;
+  border-radius:24px 24px 0 0 !important;
+  padding-bottom:calc(16px + var(--safe-bottom)) !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+/* 底部导航固定在真实屏幕底部 */
+.bottom-nav,
+.tabbar,
+.nav-bottom,
+.bottom{
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  width:100% !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding-bottom:var(--safe-bottom) !important;
+  border-radius:0 !important;
+  z-index:80 !important;
+}
+
+/* 对话内操作栏同样按手机宽度处理 */
+.composer,
+.chat-actions,
+.conversation-actions,
+.actionbar{
+  width:100% !important;
+  max-width:none !important;
+}
+
+/* 即使在电脑浏览器预览，也保持“移动网页布局”，只是不再画手机壳 */
+@media (min-width:600px){
+  html,body{background:var(--bg,#eef8fd) !important}
+  body{padding:0 !important}
+  .phone,.app,.shell,.mobile-app,.page{
+    width:100% !important;
+    max-width:none !important;
+    min-height:100dvh !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+  }
+  .content{
+    max-width:520px !important;
+    width:100% !important;
+    margin:0 auto !important;
+  }
+  .header > *,
+  .env > *{
+    max-width:520px;
+  }
+}
+
+/* 真正手机尺寸进一步收紧 */
+@media (max-width:430px){
+  .content{padding-left:11px !important;padding-right:11px !important}
+  .title{font-size:17px !important}
+  .circle{width:36px !important;height:36px !important}
+}
+</style>
+
+
+<style id="role-create-mobile-css">
+.role-create-page{
+  position:fixed;inset:0;z-index:500;
+  width:100%;height:100dvh;
+  background:#f3f9fd;color:#263d4f;
+  overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+.role-create-header{
+  height:calc(62px + env(safe-area-inset-top,0px));
+  padding:calc(10px + env(safe-area-inset-top,0px)) 14px 8px;
+  display:grid;grid-template-columns:42px 1fr 52px;align-items:center;
+  background:rgba(255,255,255,.96);border-bottom:1px solid #e8f1f7;
+}
+.role-back{
+  width:38px;height:38px;border:0;border-radius:13px;background:#eef7fc;
+  color:#4d83a9;font-size:30px;line-height:32px;
+}
+.role-create-title{font-size:18px;font-weight:800;line-height:1.25}
+.role-create-subtitle{font-size:11px;color:#94a7b5;margin-top:2px}
+.role-save-top{
+  border:0;background:transparent;color:#4d98c9;font-size:14px;font-weight:700;padding:10px 0;
+}
+.role-create-scroll{
+  height:calc(100dvh - 62px - env(safe-area-inset-top,0px));
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:14px 12px calc(30px + env(safe-area-inset-bottom,0px));
+}
+.role-avatar-section{
+  display:flex;align-items:center;gap:13px;padding:5px 4px 17px;
+}
+.role-avatar-upload{
+  width:70px;height:70px;flex:0 0 70px;border-radius:22px;
+  border:1.5px dashed #a8cee5;background:#eaf6fc;color:#6aa8cd;
+}
+.role-avatar-placeholder{font-size:29px;font-weight:300}
+.role-avatar-text{display:flex;flex-direction:column;gap:4px}
+.role-avatar-text strong{font-size:15px}
+.role-avatar-text span{font-size:12px;color:#91a5b4}
+.role-form-card,.role-user-card{
+  background:#fff;border:1px solid #e5f0f7;border-radius:20px;
+  padding:16px;margin-bottom:12px;
+  box-shadow:0 5px 18px rgba(62,126,166,.05);
+}
+.role-section-title{font-size:15px;font-weight:800}
+.role-section-desc{font-size:11px;color:#9aabb8;margin-top:3px}
+.role-field{display:block;margin-top:15px}
+.role-field>span{display:block;font-size:13px;font-weight:650;margin-bottom:7px}
+.role-field b{color:#e88989;font-weight:700}
+.role-field input,.role-field textarea{
+  display:block;width:100%;border:1px solid #e1edf5;border-radius:14px;
+  background:#f8fbfd;padding:11px 12px;color:#314a5c;font-size:16px;
+  font-family:inherit;outline:none;resize:none;
+}
+.role-field input{height:44px}
+.role-field input:focus,.role-field textarea:focus{background:#fff;border-color:#8bc5e7}
+.role-field small{display:block;color:#9aabb8;font-size:11px;margin:6px 2px 0;line-height:1.5}
+.role-two-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role-add-field{
+  width:100%;height:44px;margin-top:14px;border:1px dashed #b7d8ea;
+  border-radius:14px;background:#f5fbfe;color:#5799bf;font-size:13px;font-weight:700;
+}
+.custom-state-row{display:grid;grid-template-columns:.8fr 1.2fr 34px;gap:7px;margin-top:10px}
+.custom-state-row input{
+  width:100%;height:42px;border:1px solid #e1edf5;border-radius:12px;
+  background:#f8fbfd;padding:0 10px;font-size:14px;outline:none;
+}
+.custom-state-row button{
+  border:0;border-radius:11px;background:#f9eeee;color:#c67b7b;font-size:18px;
+}
+.role-details-wrap{padding:0;overflow:hidden}
+.role-details-toggle{
+  width:100%;border:0;background:#fff;padding:15px 16px;
+  display:flex;justify-content:space-between;align-items:center;text-align:left;color:#314a5c;
+}
+.role-details-toggle span{display:flex;flex-direction:column;gap:3px}
+.role-details-toggle strong{font-size:14px}
+.role-details-toggle small{font-size:11px;color:#9aabb8;font-weight:400}
+.role-details-toggle i{font-style:normal;font-size:20px;color:#8ca6b7;transition:.2s}
+.role-details-toggle.open i{transform:rotate(180deg)}
+.role-advanced{padding:0 16px 16px;border-top:1px solid #eef4f8}
+.role-switch-line{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding-top:15px;margin-top:14px;border-top:1px solid #eef4f8;
+}
+.role-switch-line>span{display:flex;flex-direction:column;gap:3px}
+.role-switch-line strong{font-size:13px}
+.role-switch-line small{font-size:11px;color:#9aabb8}
+.role-switch-line input{width:20px;height:20px}
+.role-user-card{display:flex;align-items:center;gap:11px;padding:15px}
+.role-user-icon{
+  width:42px;height:42px;flex:0 0 42px;border-radius:14px;background:#e8f6fd;
+  display:grid;place-items:center;color:#579cc4;font-size:14px;font-weight:800;
+}
+.role-user-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.role-user-copy strong{font-size:14px}
+.role-user-copy span{font-size:11px;line-height:1.45;color:#8fa4b3}
+.ios-switch{position:relative;width:46px;height:28px;flex:0 0 46px}
+.ios-switch input{opacity:0;width:0;height:0}
+.ios-switch span{
+  position:absolute;inset:0;border-radius:20px;background:#d9e4eb;transition:.2s;
+}
+.ios-switch span:before{
+  content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;
+  border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);transition:.2s;
+}
+.ios-switch input:checked+span{background:#75b9df}
+.ios-switch input:checked+span:before{transform:translateX(18px)}
+.role-main-save{
+  width:100%;height:50px;border:0;border-radius:17px;background:#74b8de;
+  color:#fff;font-size:15px;font-weight:800;box-shadow:0 8px 18px rgba(76,154,198,.18);
+}
+.role-bottom-tip{text-align:center;font-size:11px;color:#a3b2bd;margin:9px 0 4px}
+@media(max-width:360px){
+  .role-two-fields{grid-template-columns:1fr}
+}
+</style>
+
+
+<style id="new-conversation-role-picker-v15">
+.new-role-inline{
+  width:100%;min-height:62px;margin:13px 0 12px;padding:10px 12px;
+  display:grid;grid-template-columns:42px 1fr 20px;align-items:center;gap:10px;
+  border:1px solid #dceef8;border-radius:17px;background:#f5fbff;
+  color:#31556d;text-align:left;
+}
+.new-role-inline-icon{
+  width:40px;height:40px;border-radius:13px;background:#dff2fc;color:#579ec7;
+  display:grid;place-items:center;font-size:23px;font-weight:400;
+}
+.new-role-inline>span:nth-child(2){display:flex;flex-direction:column;gap:3px}
+.new-role-inline b{font-size:14px}
+.new-role-inline small{font-size:11px;color:#91a7b6}
+.new-role-inline i{font-style:normal;color:#8db2c8;font-size:22px}
+
+.role-search-wrap{
+  height:46px;display:grid;grid-template-columns:28px 1fr 28px;align-items:center;
+  gap:3px;padding:0 9px;margin:0 0 11px;border:1px solid #dfedf6;
+  border-radius:15px;background:#fff;
+}
+.role-search-icon{font-size:22px;color:#7ca9c3;text-align:center;transform:rotate(-15deg)}
+.role-search-wrap input{
+  width:100%;height:42px;border:0!important;background:transparent!important;
+  padding:0 4px!important;font-size:16px!important;outline:none!important;color:#314b5d;
+}
+.role-search-wrap button{
+  width:27px;height:27px;border:0;border-radius:50%;background:#edf4f8;
+  color:#8ba3b2;font-size:16px;
+}
+.role-picker-label{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:2px 2px 8px;font-size:12px;color:#728b9c;
+}
+.role-picker-label span{font-weight:700;color:#536f82}
+.role-picker-label small{font-size:10px;color:#a0b0bb}
+
+.conversation-role-scroll{
+  max-height:278px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-right:2px;overscroll-behavior:contain;
+  scrollbar-width:none;
+}
+.conversation-role-scroll::-webkit-scrollbar{display:none}
+.conversation-role-scroll .create-role{margin-bottom:8px}
+.role-search-empty{
+  padding:28px 10px;text-align:center;font-size:12px;color:#9babb6;
+}
+
+.default-role-avatar{
+  width:100%;height:100%;display:grid;place-items:center;
+}
+.default-role-avatar svg{width:42px;height:42px;fill:#83b9d6}
+
+/* 新建对话页继续保持手机单列，不被角色数量撑长 */
+.new-conversation-panel .create-card{overflow:visible}
+</style>
+<style id="bundle-ui">
+#bundleOverlay{z-index:90!important}
+.bundle-sheet{max-height:82dvh!important;padding:10px 16px calc(18px + env(safe-area-inset-bottom))!important}
+.bundle-section{margin:10px 0;padding:10px;border:1px solid #dfedf6;border-radius:12px;background:#fff}
+.bundle-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;color:#385c6c;font-size:12px}
+.bundle-section-head button{border:1px solid #cde4ec;border-radius:8px;background:#f6fbfd;color:#4d8195;padding:6px 9px;font-size:10px;font-weight:800}
+.bundle-options{display:grid;gap:6px;max-height:185px;overflow:auto}
+.bundle-option{display:flex;align-items:center;gap:9px;min-height:45px;padding:7px;border:1px solid #e7f0f4;border-radius:9px;background:#fbfdfe}
+.bundle-option input{width:18px;height:18px;accent-color:#54b3d8;flex:0 0 auto}
+.bundle-option span{min-width:0;display:grid;gap:2px}
+.bundle-option b,.bundle-option small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bundle-option b{color:#385c6c;font-size:11px}.bundle-option small{color:#879da6;font-size:9px}
+.bundle-empty{padding:12px;text-align:center;color:#94a9b1;font-size:10px}
+.bundle-preview{padding:10px;border:1px solid #d9cffa;border-radius:10px;background:#faf8ff;color:#5f5680;font-size:10px;line-height:1.6}
+.bundle-preview>div{margin-top:5px}.bundle-warning{margin-top:7px;padding:7px;border-radius:8px;background:#fff4e8;color:#8e6840}
+.bundle-message{min-height:21px;margin:6px 2px;color:#668390;font-size:10px;line-height:1.5}
+.bundle-actions{display:grid;grid-template-columns:1fr 1fr;position:sticky;bottom:0;padding:8px 0;background:#fff}
+.bundle-actions #bundleCommitButton:not([hidden]){grid-column:1/-1}
+</style>
+<style id="market-ui">
+.market-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}.market-toolbar button,.market-tools button{min-height:37px;border:1px solid #cfe4eb;border-radius:9px;background:#fff;color:#527f90;font-size:10px;font-weight:800}.market-toolbar button.active,.market-kind button.active{background:#e8f6fb;color:#2687aa;border-color:#add8e6}.market-search{width:100%;height:40px;padding:0 10px;border:1px solid #d8e9ee;border-radius:10px;background:#fff;color:#385c6c;font-size:11px}.market-kind{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:8px 0}.market-kind button{min-height:32px;border:1px solid #e0edf1;border-radius:8px;background:#fff;color:#76909a;font-size:9px}.market-list{display:grid;gap:8px}.market-item{padding:11px;border:1px solid #dcebf0;border-radius:10px;background:#fff}.market-item-main{width:100%;padding:0;border:0;background:none;text-align:left;color:inherit}.market-item-head{display:flex;align-items:center;gap:7px}.market-item-head b{min-width:0;flex:1;color:#3d6574;font-size:12px;overflow-wrap:anywhere}.market-item-head span,.market-tags span{padding:3px 6px;border-radius:7px;background:#edf7fa;color:#6394a4;font-size:8px}.market-item p{margin:6px 0;color:#8499a1;font-size:9px;line-height:1.5}.market-item-foot{display:flex;align-items:center;gap:6px;color:#95a8ae;font-size:8px}.market-item-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}.market-item-actions button{min-height:29px;padding:0 8px;border:1px solid #d7e8ed;border-radius:8px;background:#f8fcfd;color:#57869a;font-size:9px}.market-empty{padding:20px 10px;text-align:center;color:#8ca1a9;font-size:10px}.market-overlay{z-index:110!important}.overlay.bundle-market-top{z-index:120!important}.market-sheet{max-height:86dvh;overflow:auto;padding:12px 16px calc(20px + env(safe-area-inset-bottom))}.market-detail{max-height:36vh;overflow:auto;padding:10px;border:1px solid #e0edf1;border-radius:9px;background:#fafdfe;color:#536f7b;font-size:10px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}.market-form label{display:block;margin:10px 0;color:#62818d;font-size:9px;font-weight:800}.market-form input,.market-form select,.market-form textarea{box-sizing:border-box;width:100%;min-height:39px;margin-top:5px;padding:8px;border:1px solid #d6e8ee;border-radius:9px;background:#fff;color:#385c6c;font:inherit}.market-form textarea{min-height:70px;resize:vertical}.market-message{min-height:18px;color:#8b6c52;font-size:9px;line-height:1.5}.market-admin-list{display:grid;gap:7px}.market-admin-item{padding:10px;border:1px solid #e1edf2;border-radius:11px;background:#fff}.market-admin-item b{font-size:12px}.market-admin-item p{margin:5px 0;color:#8297a2;font-size:10px;line-height:1.5}.market-admin-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.market-admin-actions button{min-height:32px;padding:0 9px;border:1px solid #d3e7ef;border-radius:9px;background:#f7fbfd;color:#4d8298;font-size:10px}.market-admin-actions .danger{color:#a85b5b;border-color:#eed8d8;background:#fff9f9}
+</style>
+
+</head>
+<body data-dr-enabled="{{ dr_enabled|yesno:'true,false' }}" data-dr-standby-status-url="{{ dr_standby_status_url }}" data-dr-standby-node-id="{{ dr_standby_node_id }}" data-dr-standby-origin="{{ dr_standby_origin }}">
+<div class="phone" id="prototypeApp" style="visibility:hidden">
+<div class="viewbar" id="viewbar">管理员查看中 · 当前账号：夜行者 · 只读 <button onclick="exitView()">退出</button></div>
+<div class="app">
+<header class="header"><div class="head"><div><div class="eyebrow">霓虹酒馆</div><div class="title">雨夜 · 霓虹酒馆</div></div><div class="actions"><button class="circle" onclick="openPanel('characters')">♧</button><button class="circle" onclick="openPanel('account')">◎</button></div></div></header>
+<div class="env"><span><i class="dot"></i>23:47 · 小雨 · 氛围低沉</span><b>● 在线</b></div>
+<main class="content" id="content">
+<section id="conversationHome">
+  <div class="home-head">
+    <div>
+      <div class="eyebrow">MY CONVERSATIONS</div>
+      <h1>我的对话</h1>
+      <p>每一次对话都是独立的故事记录。</p>
+    </div>
+    <div class="home-count">3</div>
+  </div>
+
+  <button class="new-conv-card" onclick="openNewConversation()">
+    <div class="new-icon">＋</div>
+    <div>
+      <b>新建一次对话</b>
+      <span>选择角色，设定初始环境，开始新的故事</span>
+    </div>
+    <i>›</i>
+  </button>
+
+  <div class="section-label">最近对话</div>
+  <div id="conversationList"></div>
+</section>
+
+<section id="chatView" style="display:none">
+  <div id="chatParticipants" class="chat-participants"></div>
+  <div class="chat-title-card">
+    <div>
+      <div class="eyebrow">CONVERSATION · 12:48 AM</div>
+      <strong id="chatTitle">雨夜 · 霓虹酒馆</strong>
+    </div>
+    <button onclick="closeChat()">返回</button>
+  </div>
+
+  <div class="environment-card">
+    <div class="env-head"><b>📍 来生酒吧</b><span>当前环境</span></div>
+    <div class="env-desc">深夜。窗外下着雨，霓虹灯透过玻璃落在吧台上。酒馆里的音乐很低，空气中混着酒精与潮湿的金属味。</div>
+    <div class="env-tags"><span>深夜</span><span>夜雨</span><span>低沉</span></div>
+  </div>
+
+  <div class="day-divider"><span>第 1 轮</span></div>
+
+  <div class="msg npc">
+    <div class="msg-avatar">L</div>
+    <div class="msg-main">
+      <div class="meta"><b>莉亚</b><span>00:41</span></div>
+      <div class="bubble">
+        <p>“你迟到了七分钟。”</p>
+        <div class="action">她把杯子推到你面前，指尖轻轻敲了两下杯沿。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-card character-status">
+    <div class="status-head"><span>♡ STATUS</span><b>莉亚</b><small>本轮回复后</small></div>
+    <div class="status-grid">
+      <div>❤️ 好感度 <b>15%</b></div><div>😊 心情 <b>微醺放松</b></div>
+      <div>🍷 饮酒状态 <b>半醉</b></div><div>👗 衣服 <b>黑色短外套</b></div>
+      <div>💧 衣服状态 <b>肩部微湿</b></div><div>💭 想法 <b>想拉你入伙</b></div>
+      <div>🤝 社交圈 <b>百灵鸟、瓦莱莉</b></div><div>🎭 当前状态 <b>慵懒试探</b></div>
+    </div>
+    <div class="status-state"><span>变化</span><i>注意你</i><i>靠近</i><i>试探</i></div>
+  </div>
+
+  <div class="msg player-msg">
+    <div class="msg-main"><div class="meta"><span>00:42</span><b>我</b></div><div class="bubble player"><p>“路上有点麻烦。那东西呢？”</p></div></div>
+    <div class="msg-avatar player-avatar">我</div>
+  </div>
+
+  <div class="day-divider"><span>第 2 轮</span></div>
+
+  <div class="msg npc">
+    <div class="msg-avatar">K</div>
+    <div class="msg-main">
+      <div class="meta"><b>凯恩</b><span>00:43</span></div>
+      <div class="bubble">
+        <p>“东西是真的。”</p>
+        <div class="action">凯恩从阴影里抬眼看你，把一枚薄得几乎透明的数据芯片压回桌面。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-card character-status">
+    <div class="status-head"><span>♡ STATUS</span><b>凯恩</b><small>本轮回复后</small></div>
+    <div class="status-grid">
+      <div>😊 心情 <b>兴致高涨</b></div><div>🍷 饮酒状态 <b>醉意明显</b></div>
+      <div>👕 衣服 <b>深灰衬衫</b></div><div>💧 衣服状态 <b>领口微乱</b></div>
+      <div>💭 想法 <b>想摸你的底</b></div><div>👁 当前状态 <b>正在观察</b></div>
+    </div>
+    <div class="status-state"><span>变化</span><i>打趣</i><i>观察</i><i>话多</i></div>
+  </div>
+
+  <div class="msg player-msg">
+    <div class="msg-main"><div class="meta"><span>00:44</span><b>我</b></div><div class="bubble player"><p>“那为什么还不交给我？”</p></div></div>
+    <div class="msg-avatar player-avatar">我</div>
+  </div>
+
+  <div class="day-divider"><span>第 3 轮</span></div>
+
+  <div class="msg npc">
+    <div class="msg-avatar">L</div>
+    <div class="msg-main">
+      <div class="meta"><b>莉亚</b><span>00:46</span></div>
+      <div class="bubble">
+        <p>“因为现在拿走它的人，都会被盯上。”</p>
+        <div class="action">她靠近一些，声音压低。酒馆里的音乐恰好盖住了最后几个字。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-card character-status">
+    <div class="status-head"><span>♡ STATUS</span><b>莉亚</b><small>本轮回复后</small></div>
+    <div class="status-grid">
+      <div>❤️ 好感度 <b>18%</b></div><div>😊 心情 <b>冷静观察</b></div>
+      <div>🍷 饮酒状态 <b>半醉</b></div><div>👗 衣服 <b>黑色短外套</b></div>
+      <div>💧 衣服状态 <b>肩部仍有雨水</b></div><div>💭 想法 <b>正在评估你</b></div>
+      <div>📏 距离 <b>靠近一步</b></div><div>🎭 当前状态 <b>沉默审视</b></div>
+    </div>
+    <div class="status-state"><span>变化</span><i>靠近</i><i>审视</i><i>警觉</i></div>
+  </div>
+
+  <div class="msg player-msg">
+    <div class="msg-main"><div class="meta"><span>00:47</span><b>我</b></div><div class="bubble player"><p>“所以你是在提醒我？”</p></div></div>
+    <div class="msg-avatar player-avatar">我</div>
+  </div>
+
+  <div class="day-divider"><span>第 4 轮 · 当前</span></div>
+
+  <div class="msg npc">
+    <div class="msg-avatar">L</div>
+    <div class="msg-main">
+      <div class="meta"><b>莉亚</b><span>00:48</span></div>
+      <div class="bubble">
+        <p>“我只是在给你一个选择。”</p>
+        <div class="action">她没有继续解释，只是用指尖轻轻转动杯子，视线停留在你脸上。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-card character-status current">
+    <div class="status-head"><span>♡ STATUS</span><b>莉亚</b><small>最新状态</small></div>
+    <div class="status-grid">
+      <div>❤️ 好感度 <b>20%</b></div><div>😊 心情 <b>微妙</b></div>
+      <div>👗 衣服 <b>黑色短外套</b></div><div>💧 衣服状态 <b>微湿</b></div>
+      <div>💭 想法 <b>等待你的选择</b></div><div>👁 当前状态 <b>谨慎试探</b></div>
+    </div>
+    <div class="extra-status">
+      <div class="extra-title">额外状态 <span>来自本轮回复</span></div>
+      <div class="extra-row"><span>动作</span><b>指尖持续敲击杯沿</b></div>
+      <div class="extra-row"><span>姿态</span><b>身体略微前倾</b></div>
+    </div>
+    <div class="status-state"><span>变化</span><i>等待</i><i>试探</i><i>观察</i></div>
+  </div>
+
+  <div class="waiting"><span>等待你的下一句话</span><small>发送后，AI 将根据本轮对话与最新状态继续生成。</small></div>
+</section>
+</main>
+<footer class="composer" id="chatComposer" style="display:none">
+  <div class="composer-actions">
+    <button class="role-chip" onclick="openRoleSheet()">
+      <span class="mini-avatar" id="currentAvatar">我</span>
+      <span><small>回复角色</small><b id="currentRole">我 · 玩家卡</b></span>
+      <span class="chev">⌄</span>
+    </button>
+    <button class="ooc-btn" id="oocToggle" onclick="toggleOoc()">场外 · 导演 <span>OFF</span></button>
+  </div>
+  <div class="input-row">
+    <textarea id="messageInput" placeholder="回复 我……"></textarea>
+    <button class="send" onclick="sendMessage()">回复</button>
+    <button class="gen" onclick="openSheet()" aria-label="生成回应">✦<span>生成</span></button>
+  </div>
+</footer>
+<nav class="bottom">
+  <button class="tab active" id="tabConversations" onclick="showConversations()"><span>⌂</span>对话</button>
+  <button class="tab" id="tabCharacters" onclick="openPanel('characters')"><span>♙</span>角色</button>
+  <button class="tab" id="tabMaterials" onclick="openPanel('materials')"><span>◇</span>素材</button>
+  <button class="tab" id="tabAccount" onclick="openPanel('account')"><span>◎</span>我的</button>
+</nav>
+</div>
+
+<div class="overlay" id="sheet" onclick="closeSheet()">
+  <div class="sheet generation-sheet" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <h2>生成回应</h2>
+
+    <div class="setting-card">
+      <div class="setting-head"><b>对话语言 / 旁白</b><span>生成规则</span></div>
+      <div class="setting-row">
+        <button class="setting-option active">中文</button>
+        <button class="setting-option">英文</button>
+        <button class="setting-option">跟随角色</button>
+      </div>
+      <div class="setting-row">
+        <button class="setting-option active">包含动作旁白</button>
+        <button class="setting-option">仅角色台词</button>
+      </div>
+    </div>
+
+    <div class="setting-card role-card-section">
+      <div class="setting-head"><b>选择角色卡片</b><span>生成对象</span></div>
+      <div class="role-grid">
+        <div class="role-card selected" onclick="selectGenRole(this,'莉亚')">
+          <div class="avatar">L</div><div><b>莉亚</b><small>NPC · 警惕 · 话少</small></div><i>✓</i>
+        </div>
+        <div class="role-card" onclick="selectGenRole(this,'凯恩')">
+          <div class="avatar">K</div><div><b>凯恩</b><small>NPC · 沉默 · 观察</small></div><i>✓</i>
+        </div>
+        <div class="role-card" onclick="selectGenRole(this,'我')">
+          <div class="avatar">我</div><div><b>我</b><small>玩家角色卡</small></div><i>✓</i>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-buttons generation-actions">
+      <button onclick="closeSheet()">取消</button>
+      <button class="primary" onclick="startGeneration()">开始生成</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="roleSheet" onclick="closeRoleSheet()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <h2>切换角色卡片</h2>
+    <p class="sheet-desc">选择后，输入框会切换到对应角色卡片。台词与动作旁白不再作为独立模式。</p>
+    <div class="role role-select selected" onclick="chooseRole(this,'我','我')"><div class="avatar">我</div><div><b>我</b><small>玩家角色卡</small></div><div class="check checked"></div></div>
+    <div class="role role-select" onclick="chooseRole(this,'莉亚','L')"><div class="avatar">L</div><div><b>莉亚</b><small>NPC · 警惕 · 话少</small></div><div class="check"></div></div>
+    <div class="role role-select" onclick="chooseRole(this,'凯恩','K')"><div class="avatar">K</div><div><b>凯恩</b><small>NPC · 沉默 · 观察</small></div><div class="check"></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="oocSheet" onclick="closeOocSheet()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <h2>场外 · 导演</h2>
+    <p class="sheet-desc">这里是生成控制，不属于角色台词。用于告诉导演这一轮希望剧情怎样推进。</p>
+    <div class="ooc-editor">
+      <textarea id="oocInput" placeholder="例如：让角色保持警惕，不要直接透露线索。"></textarea>
+    </div>
+    <div class="sheet-buttons">
+      <button onclick="closeOocSheet()">取消</button>
+      <button class="primary" onclick="saveDirectorInstruction()">保存导演指令</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel new-conversation-panel" id="newConversation">
+  <div class="panel-head"><button onclick="closeNewConversation()">‹</button><div><b>新建一次对话</b><small>NEW CONVERSATION</small></div></div>
+
+  <div class="create-card">
+    <div class="create-title">第一步 · 选择参与角色</div>
+    <p>至少选择一个其他角色。你的玩家角色卡会自动加入。</p>
+
+    <button class="new-role-inline" onclick="openRoleCreator()">
+      <span class="new-role-inline-icon">＋</span>
+      <span><b>新建角色卡</b><small>没有想要的角色？直接创建一个</small></span>
+      <i>›</i>
+    </button>
+
+    <div class="role-search-wrap">
+      <span class="role-search-icon">⌕</span>
+      <input id="newConversationRoleSearch" type="search" placeholder="搜索角色名字或介绍" oninput="filterConversationRoles(this.value)">
+      <button type="button" onclick="clearConversationRoleSearch()">×</button>
+    </div>
+
+    <div class="role-picker-label"><span>选择角色卡</span><small>上下滑动查看更多</small></div>
+
+    <div class="conversation-role-scroll" id="conversationRoleScroll">
+      <div class="create-role selected" data-role-search="莉亚 酒馆老板娘 警惕 善于试探" onclick="toggleCreateRole(this)">
+        <div class="avatar">莉</div><div><b>莉亚</b><small>酒馆老板娘 · 警惕而善于试探</small></div><span>✓</span>
+      </div>
+      <div class="create-role" data-role-search="凯恩 情报商 沉默 喜欢观察" onclick="toggleCreateRole(this)">
+        <div class="avatar">凯</div><div><b>凯恩</b><small>情报商 · 沉默 · 喜欢观察</small></div><span>✓</span>
+      </div>
+      <div class="create-role" data-role-search="榆泽 实验对象 安静 神秘" onclick="toggleCreateRole(this)">
+        <div class="avatar">榆</div><div><b>榆泽</b><small>实验对象 · 安静 · 身份神秘</small></div><span>✓</span>
+      </div>
+      <div class="create-role" data-role-search="星玄 调查员 冷静 谨慎" onclick="toggleCreateRole(this)">
+        <div class="avatar">玄</div><div><b>星玄</b><small>调查员 · 冷静 · 行事谨慎</small></div><span>✓</span>
+      </div>
+      <div class="create-role" data-role-search="诺拉 医生 温和 理性" onclick="toggleCreateRole(this)">
+        <div class="avatar">诺</div><div><b>诺拉</b><small>医生 · 温和 · 理性</small></div><span>✓</span>
+      </div>
+      <div class="create-role" data-role-search="洛克 雇佣兵 直接 寡言" onclick="toggleCreateRole(this)">
+        <div class="avatar">洛</div><div><b>洛克</b><small>雇佣兵 · 直接 · 寡言</small></div><span>✓</span>
+      </div>
+      <div class="role-search-empty" id="roleSearchEmpty" style="display:none;">没有找到这个角色</div>
+    </div>
+  </div>
+
+  <div class="create-card" id="newEnvironment">
+    <div class="create-title">第二步 · 初始环境</div>
+    <p>环境属于这次对话的状态，会显示在聊天顶部。</p>
+    <label>故事标题<input id="newTitle" maxlength="120" placeholder="例如：雨夜 · 霓虹酒馆"></label>
+    <label>地点<input value="来生酒吧" /></label>
+    <label>时间<input value="深夜" /></label>
+    <label>环境描写<textarea>窗外下着雨，霓虹灯透过玻璃落在吧台上。酒馆里的音乐很低。</textarea></label>
+  </div>
+
+  <div class="create-card" id="newOptions">
+    <div class="create-title">第三步 · 对话设置</div>
+    <label class="create-line"><span>玩家角色</span><select id="newPlayer" required></select></label>
+    <label class="create-line"><span>自动生成</span><input data-auto type="checkbox"></label>
+    <div class="create-line"><span>初始消息</span><b>由我开始</b></div>
+  </div>
+
+  <button class="start-conv" onclick="startNewConversation()">创建并进入对话</button>
+  <button type="button" class="start-conv" id="deleteConversation" hidden>删除对话</button>
+</div>
+
+<div class="panel character-creator" id="characterCreator">
+  <div class="panel-head">
+    <button class="back" onclick="closeCharacterCreator()">‹</button>
+    <div><b>添加角色卡</b><small>CHARACTER CARD</small></div>
+  </div>
+
+  <div class="creator-avatar">
+    <div class="big-avatar">L</div>
+    <button onclick="toast('更换头像（演示）')">更换头像</button>
+  </div>
+
+  <div class="create-card">
+    <div class="create-title">基本信息</div>
+    <label>角色名称<input value="莉亚" placeholder="例如：莉亚" /></label>
+    <label>角色简介<input value="酒馆老板娘" placeholder="一句话描述角色" /></label>
+    <label>性格与行为<textarea>警惕、聪明、善于试探。不会轻易透露真实目的。</textarea></label>
+  </div>
+
+  <div class="create-card">
+    <div class="create-title">关系与设定</div>
+    <label>与你的关系<input value="刚认识的情报联系人" /></label>
+    <label>社交圈<input value="百灵鸟、瓦莱莉" /></label>
+    <label>初始状态<textarea>微醺；对玩家保持观察；愿意提供线索，但有所保留。</textarea></label>
+  </div>
+
+  <div class="create-card">
+    <div class="create-title">自定义状态字段</div>
+    <p>AI 每轮生成后可以根据对话更新这些字段。</p>
+    <div class="field-row"><span>❤️ 好感度</span><button>数字</button></div>
+    <div class="field-row"><span>😊 心情</span><button>文本</button></div>
+    <div class="field-row"><span>👗 衣服</span><button>文本</button></div>
+    <div class="field-row"><span>💧 衣服状态</span><button>文本</button></div>
+    <button class="add-field" onclick="toast('添加自定义状态字段（演示）')">＋ 添加状态字段</button>
+  </div>
+
+  <div class="create-card user-control-card">
+    <div class="create-title">角色控制权</div>
+    <p>决定这个角色是否作为用户本人操作。开启后，对话中的输入会使用这张角色卡。</p>
+    <div class="user-switch-row">
+      <div><b>这是用户角色</b><small>关闭 = NPC，由 AI 负责生成</small></div>
+      <button class="switch" id="userRoleSwitch" onclick="toggleUserRole()"><i></i></button>
+    </div>
+    <div class="control-note" id="userRoleNote">当前：NPC · AI 控制</div>
+  </div>
+
+  <button class="save-character" onclick="saveCharacter()">保存角色卡</button>
+</div>
+
+<div class="panel" id="characters">
+  <div class="panel-head"><button class="back" onclick="closePanel('characters')">‹</button><h2>角色</h2></div>
+
+  <button class="add-character-card" onclick="openCharacterCreator()">
+    <div class="add-character-icon">＋</div>
+    <div><b>添加角色卡</b><small>创建一个新的 NPC 或用户角色</small></div>
+    <i>›</i>
+  </button>
+  <div class="worldbook-commandbar" id="characterTools"><button type="button" id="characterCategoryManage">分类管理</button><button type="button" id="characterImport">导入</button><button type="button" data-open-bundle>整合包</button><input id="characterImportFile" type="file" accept="application/json,.json,image/png,.png" hidden></div>
+  <div id="characterCategoryTree" class="worldbook-tree"></div>
+
+  <div class="section-label">我的角色卡</div>
+
+  <div class="card">
+    <div class="card-head"><div class="avatar">我</div><div><b>我的角色</b><small>用户角色 · 当前玩家</small></div><span class="role-badge user">USER</span></div>
+    <div class="tags"><span>玩家控制</span><span>可参与对话</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="avatar">L</div><div><b>莉亚</b><small>NPC · 可生成</small></div><span class="role-badge">其他角色</span></div>
+    <div style="margin-top:9px;color:#8da0aa;font-size:9px;display:flex;justify-content:space-between"><span>好感度</span><span>68</span></div>
+    <div class="bar"><i style="width:68%"></i></div>
+    <div class="tags"><span>警惕</span><span>话少</span><span>微醺</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="avatar">K</div><div><b>凯恩</b><small>NPC · 可生成</small></div><span class="role-badge">其他角色</span></div>
+    <div style="margin-top:9px;color:#8da0aa;font-size:9px;display:flex;justify-content:space-between"><span>信任</span><span>41</span></div>
+    <div class="bar"><i style="width:41%"></i></div>
+    <div class="tags"><span>沉默</span><span>观察</span></div>
+  </div>
+</div>
+
+<div class="panel" id="materials">
+  <div class="panel-head"><button class="back" onclick="closePanel('materials')">‹</button><h2>素材市场</h2></div>
+  <div class="market-toolbar"><button type="button" class="active" data-market-scope="local">本站素材</button><button type="button" data-market-scope="public">公共市场</button></div>
+  <input id="marketSearch" class="market-search" type="search" placeholder="搜索名称或简介">
+  <div class="market-kind"><button type="button" class="active" data-market-kind="">全部</button><button type="button" data-market-kind="character">角色卡</button><button type="button" data-market-kind="worldbook">世界书</button><button type="button" data-market-kind="bundle">整合包</button></div>
+  <div class="market-item-foot" id="marketStatus" role="status">正在读取市场状态…</div>
+  <button type="button" id="marketRetry" class="test-api" hidden>重试连接公共市场</button>
+  <div id="marketListings" class="market-list"><div class="market-empty">正在加载素材…</div></div>
+  <button class="save-character" id="marketPublishOpen" type="button">发布我的素材</button>
+</div>
+
+<div class="panel" id="account">
+  <div class="panel-head"><button class="back" onclick="closePanel('account')">‹</button><h2>我的</h2></div>
+  <div class="card"><div class="card-head"><div class="avatar">U</div><div><b>游客用户</b><small id="accountRole">普通用户</small></div></div><p style="font-size:10px;color:#8398a4">只能查看和操作自己的对话、角色与聊天记录。</p></div>
+  <section class="account-warnings" id="accountWarnings" hidden aria-live="polite"></section>
+  <button class="settings-entry" onclick="openSettings('modelSettings')"><div class="settings-icon">◈</div><div><b>模型设置</b><small>连接 · 模型 · 温度 · Token 参数</small></div><span>›</span></button>
+  <button class="settings-entry" onclick="openSettings('worldBookSettings')"><div class="settings-icon">册</div><div><b>世界书</b><small>设定条目 · 触发词 · 插入位置</small></div><span>›</span></button>
+  <button class="settings-entry" onclick="openSettings('globalSettings')"><div class="settings-icon">⚙</div><div><b>全局设置</b><small>世界观 · 回复格式 · 全局提示词 · 内容偏好</small></div><span>›</span></button>
+  <div class="section-label">账户设置</div>
+  <div class="card"><div class="create-line"><span>登录状态</span><b>已登录</b></div><div class="create-line"><span>对话记录</span><b>本地保存</b></div></div>
+  <button class="settings-entry" id="changePassword"><div class="settings-icon">◈</div><div><b>修改密码</b><small>更新当前账号的登录密码</small></div><span>›</span></button>
+  <button class="settings-entry" id="logout"><div class="settings-icon">↪</div><div><b>退出登录</b></div><span>›</span></button>
+</div>
+
+<div class="panel" id="modelSettings">
+  <div class="panel-head"><button class="back" onclick="closeSettings('modelSettings')">‹</button><h2>模型设置</h2></div>
+  <div class="panel-title">模型设置</div>
+  <div class="panel-sub">不填写的项目会使用最常用的默认设置。</div>
+
+  <div class="setting-card">
+    <div class="setting-row">
+      <span>国内模型服务商</span>
+      <select id="modelProvider"></select>
+      <a id="providerApplyLink" class="provider-apply" href="#" target="_blank" rel="noopener">申请 API 密钥</a>
+    </div>
+    <div class="setting-row">
+      <span>模型地址</span>
+      <input id="modelBaseUrl" value="https://api.deepseek.com" placeholder="兼容接口地址" readonly>
+    </div>
+    <div class="setting-row">
+      <span>连接密钥</span>
+      <input id="modelApiKey" type="password" placeholder="填写密钥">
+    </div>
+    <div class="setting-row">
+      <span>使用的模型</span>
+      <select id="modelName"></select>
+      <input id="customModelName" placeholder="输入自定义模型名称" hidden>
+    </div>
+    <div class="model-actions"><button type="button" id="testModelConnection">测试连接</button><button type="button" id="discoverModels">获取可用模型</button></div>
+    <div id="modelStatus" class="model-status" aria-live="polite"></div>
+    <div class="usage-panel"><div><b>模型用量与余额</b><small id="modelUsageChecked">尚未查询</small></div><button type="button" id="refreshModelUsage">查询</button><p id="modelUsageResult">打开本页后会自动查询；支持情况由模型服务商决定。</p></div>
+    <button class="primary full" onclick="saveSettings('modelSettings')">保存设置</button>
+  </div>
+
+  
+
+  <button class="detail-toggle" onclick="toggleDetail('modelDetail', this)">
+    <span>详细设置</span><span class="toggle-arrow">⌄</span>
+  </button>
+
+  <div class="detail-box mobile-detail" id="modelDetail" style="display:none;">
+    <div class="setting-card">
+      <div class="setting-row">
+        <span>回复随机度</span>
+        <input type="number" min="0" max="2" step="0.1" placeholder="默认 1.0">
+      </div>
+      <div class="setting-row">
+        <span>回复范围</span>
+        <input type="number" min="0" max="1" step="0.01" placeholder="默认 1.0">
+      </div>
+      <div class="setting-row">
+        <span>回复长度</span>
+        <input type="number" min="1" placeholder="默认值">
+      </div>
+      <label class="switch-row" hidden>
+        <span>边生成边显示</span>
+        <input type="checkbox" checked>
+      </label>
+      <label class="switch-row">
+        <span>保存原始回复</span>
+        <input type="checkbox">
+      </label>
+    </div>
+    <div class="detail-note">
+      <strong>如果你不知道怎么设置</strong><br>
+      这些项目直接留空即可，酒馆会自动使用最普世、最常用的设置。
+    </div>
+  </div>
+</div>
+
+<div class="settings-panel" id="globalSettings">
+  <div class="settings-top"><button onclick="closeSettings('globalSettings')">‹</button><div><b>全局设置</b><small>GLOBAL PROMPT & RULES</small></div></div>
+  <div class="settings-card"><div class="setting-title">全局行为指令</div><p class="setting-help">这些内容会作为应用级上下文参与每次生成，用于世界观、回复格式、状态同步等稳定规则。</p><textarea class="global-prompt">你正在运行一个多角色互动小说系统。
+保持角色人格、关系和当前状态连续。
+角色说话、动作、旁白与状态信息严格区分。
+每轮回复后，根据本轮内容更新可观察状态。
+不要替用户角色做决定。</textarea></div>
+  <div class="settings-card"><div class="setting-title">内容与风格</div><div class="toggle-row"><div><b>成人内容偏好</b><small>记录内容偏好；实际输出仍受所选模型与服务规则约束。</small></div><button type="button" class="switch" id="adultContentPreference"><i></i></button></div><div class="toggle-row"><div><b>严格角色一致性</b><small>优先保持角色卡、关系与状态连续。</small></div><button type="button" class="switch on"><i></i></button></div><div class="toggle-row"><div><b>状态自动提取</b><small>从 AI 回复中提取衣服、动作、姿态、情绪等状态字段。</small></div><button type="button" class="switch on"><i></i></button></div><div class="toggle-row"><div><b>流式生成</b><small>生成时逐步显示当前角色的回复。</small></div><button type="button" class="switch on" id="globalStreamOutput"><i></i></button></div></div>
+  <div class="settings-card adult-preference-card" id="adultPreferencePanel" hidden>
+    <div class="setting-title">成人内容偏好关键词</div>
+    <p class="setting-help">这里记录的是你的偏好提示，会作为生成时的参考。请使用简短、清晰、尊重边界的描述；不会自动替你开启成人内容。</p>
+    <button type="button" class="adult-preference-view" id="adultPreferenceView">查看已记录偏好</button>
+    <div class="adult-preference-recorded" id="adultPreferenceRecorded" hidden aria-live="polite"></div>
+    <label class="adult-preference-field"><span>自己添加偏好</span><textarea id="adultPreferenceKeywords" placeholder="例如：成人向氛围，双方自愿，节奏渐进，避免露骨细节"></textarea></label>
+    <div class="adult-preference-examples"><small>范例提示，点击即可加入：</small><div><button type="button" data-adult-example="成人向氛围，双方自愿，尊重边界">双方自愿与边界</button><button type="button" data-adult-example="节奏渐进，先铺垫情绪和关系">渐进节奏</button><button type="button" data-adult-example="避免露骨细节，重点描写情绪和关系">避免露骨细节</button></div></div>
+  </div>
+  <div class="settings-card"><div class="setting-title">偏好说明</div><p class="setting-help">全局提示词与内容偏好会参与生成；实际输出仍取决于模型服务规则。</p></div>
+  <button class="save-settings" onclick="saveSettings('globalSettings')">保存全局设置</button>
+</div>
+
+<div id="accountSecurity" class="settings-panel"><div class="settings-top"><button onclick="closeSettings('accountSecurity')">‹</button><div><b>修改密码</b></div></div><div class="settings-card"><label>当前密码<input id="oldPassword" type="password" autocomplete="current-password"></label><label>新密码<input id="newPassword" type="password" autocomplete="new-password"></label><label>确认新密码<input id="confirmPassword" type="password" autocomplete="new-password"></label></div><button class="save-settings" id="savePassword">保存新密码</button></div>
+<div id="worldBookSettings" class="settings-panel">
+  <div class="settings-top"><button onclick="closeSettings('worldBookSettings')">‹</button><div><b>世界书</b><small>WORLD BOOK</small></div></div>
+  <div class="worldbook-summary"><div><b id="worldBookTotal">0</b><small>全部条目</small></div><div><b id="worldBookEnabled">0</b><small>已启用</small></div><div><b id="worldBookKeyword">0</b><small>关键词触发</small></div></div>
+  <div class="worldbook-tools worldbook-book-tools"><select id="worldBookSelect" aria-label="选择世界书"></select><button type="button" id="worldBookCreate">新建</button><button type="button" id="worldBookDelete" class="danger">删除</button></div>
+  <div class="worldbook-tools"><input id="worldBookSearch" placeholder="搜索名称或触发词"><select id="worldBookFilter"><option value="all">全部条目</option><option value="enabled">已启用</option><option value="keyword">关键词触发</option><option value="always">始终启用</option></select></div>
+  <div class="worldbook-commandbar"><button type="button" id="worldBookManage">管理分类</button><button type="button" id="worldBookImport">导入</button><button type="button" id="worldBookExport">导出</button><button type="button" data-open-bundle>整合包</button><input id="worldBookImportFile" type="file" accept="application/json,.json" hidden></div>
+  <div id="worldBookTree" class="worldbook-tree" aria-label="递归分类树"></div>
+  <div id="worldBookSelectionToolbar" class="worldbook-selection-toolbar" hidden><span id="worldBookSelectionCount">已选 0 项</span><button type="button" id="worldBookBatchCategory">添加到分类</button><button type="button" id="worldBookManageDone">完成</button></div>
+  <div id="worldBookList" class="worldbook-list"></div>
+  <div class="settings-card"><div class="setting-title">命中预览</div><label class="worldbook-field"><span>示例对话</span><input id="worldBookPreviewInput" placeholder="例如：推开霓虹酒馆的门"></label><div id="worldBookPreviewResult" class="worldbook-preview-result">输入内容后查看会触发哪些条目。</div><div id="worldBookImportPreview" class="worldbook-import-preview" hidden></div></div>
+  <button type="button" class="worldbook-add" id="worldBookAdd">＋ 新建世界书条目</button>
+</div>
+
+<div id="worldBookEditor" class="settings-panel">
+  <div class="settings-top"><button id="worldBookEditorBack">‹</button><div><b id="worldBookEditorTitle">新建条目</b><small>ENTRY SETTINGS</small></div></div>
+  <div class="settings-card">
+    <label class="worldbook-field"><span>条目名称</span><input id="worldBookName" placeholder="例如：霓虹酒馆规则"></label>
+    <label class="worldbook-field"><span>触发词</span><input id="worldBookKeys" placeholder="可用空格、逗号、分号、顿号或竖线分隔"></label>
+    <label class="worldbook-field"><span>设定内容</span><textarea id="worldBookContent" placeholder="写入模型需要知道的背景、规则或知识"></textarea></label>
+    <div class="worldbook-grid"><label class="worldbook-field"><span>触发方式</span><select id="worldBookMode"><option value="keyword">关键词触发</option><option value="always">始终启用</option><option value="manual">手动启用</option></select></label><label class="worldbook-field"><span>插入位置</span><select id="worldBookPosition"><option value="before_character">角色卡之前</option><option value="after_character">角色卡之后</option><option value="before_recent_messages">最近对话之前</option></select></label></div>
+    <div class="worldbook-grid"><label class="worldbook-field"><span>优先级</span><input id="worldBookPriority" type="number" min="-999999" max="999999" value="100"></label><label class="worldbook-field"><span>适用范围</span><select id="worldBookScope"><option value="global">所有对话</option><option value="character">指定角色</option><option value="conversation">指定对话</option></select></label></div>
+    <label class="worldbook-field"><span>所属分类（可多选）</span><select id="worldBookCategories" multiple size="4"></select></label>
+    <label class="worldbook-field" id="worldBookTargetField" hidden><span id="worldBookTargetLabel">选择角色</span><select id="worldBookTarget"></select></label>
+    <label class="toggle-row"><div><b>启用条目</b><small>关闭后不会参与命中</small></div><button type="button" class="switch on" id="worldBookEntryEnabled"><i></i></button></label>
+  </div>
+  <div class="worldbook-editor-actions"><button type="button" class="remove" id="worldBookRemove">删除条目</button><button type="button" class="save" id="worldBookSave">保存条目</button></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="overlay market-overlay" id="marketDetailOverlay" onclick="closeMarketDetail()">
+  <section class="sheet market-sheet" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="marketDetailTitle">
+    <div class="handle"></div><h2 id="marketDetailTitle">素材详情</h2>
+    <div id="marketDetailMeta" class="market-item-foot"></div>
+    <p id="marketDetailDescription" class="setting-help"></p>
+    <div id="marketDetailContent" class="market-detail"></div>
+    <div id="marketDetailWarnings" class="market-message"></div>
+    <div class="sheet-buttons"><button type="button" onclick="closeMarketDetail()">关闭</button><button type="button" class="primary" id="marketDownload">导入我的素材</button></div>
+    <div class="market-item-actions"><button type="button" id="marketWithdraw" hidden>撤回发布</button><button type="button" id="marketReport">举报素材</button></div>
+  </section>
+</div>
+<div class="overlay market-overlay" id="marketPublishOverlay" onclick="closeMarketPublish()">
+  <section class="sheet market-sheet" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="marketPublishTitle">
+    <div class="handle"></div><h2 id="marketPublishTitle">发布素材</h2>
+    <div class="market-form">
+      <label>素材类型（必填）<select id="marketPublishKind" required><option value="character">角色卡</option><option value="worldbook">世界书</option><option value="bundle">整合包</option></select></label>
+      <label id="marketPublishSourceField">选择现有素材（必填）<select id="marketPublishSource" required></select></label>
+      <div id="marketPublishBundle" class="market-form" hidden><label>整合包内容（必选）<button type="button" id="marketChooseBundle">选择角色卡和世界书</button><small id="marketBundleSelectionLabel">尚未选择内容</small></label></div>
+      <label>发布范围（必填）<select id="marketPublishScope" required><option value="local">本站</option><option value="public">公共市场</option></select></label>
+      <label>展示名称（必填）<input id="marketPublishName" maxlength="120" required></label>
+      <label>简介（必填）<textarea id="marketPublishDescription" maxlength="500" required></textarea></label>
+      <label>标签（至少一个）<input id="marketPublishTags" maxlength="800" placeholder="用逗号分隔，例如：奇幻,冒险" required></label>
+      <label>署名（必填）<input id="marketPublishAlias" maxlength="80" required></label>
+    </div>
+    <div id="marketPublishMessage" class="market-message" role="status"></div>
+    <div class="sheet-buttons"><button type="button" onclick="closeMarketPublish()">取消</button><button type="button" class="primary" id="marketPublishSubmit">确认发布</button></div>
+  </section>
+</div>
+<div class="overlay" id="bundleOverlay" onclick="closeBundleSheet()">
+  <section class="sheet bundle-sheet" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="bundleTitle">
+    <div class="handle"></div>
+    <h2 id="bundleTitle">整合包</h2>
+    <p class="sheet-desc">选择角色卡和世界书，合并导出为一个文件；导入前会先检查内容和引用。</p>
+    <div class="bundle-section"><div class="bundle-section-head"><b>角色卡</b><button type="button" data-bundle-select="characters">全选</button></div><div id="bundleCharacters" class="bundle-options"></div></div>
+    <div class="bundle-section"><div class="bundle-section-head"><b>世界书</b><button type="button" data-bundle-select="worldbooks">全选</button></div><div id="bundleWorldbooks" class="bundle-options"></div></div>
+    <div id="bundlePreview" class="bundle-preview" hidden></div>
+    <div id="bundleMessage" class="bundle-message" role="status"></div>
+    <div class="sheet-buttons bundle-actions"><button type="button" id="bundleImportButton">导入整合包</button><button type="button" class="primary" id="bundleExportButton">导出所选</button><button type="button" class="primary" id="bundleMarketButton" data-bundle-market hidden>用于发布</button><button type="button" class="primary" id="bundleCommitButton" hidden>确认导入</button></div>
+    <input id="bundleFile" type="file" accept="application/json,.json" hidden>
+  </section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function openSheet(){$('sheet').classList.add('open')}
+function closeSheet(){$('sheet').classList.remove('open')}
+function openRoleSheet(){$('roleSheet').classList.add('open');setTimeout(()=>{const x=$('roleSheet').querySelector('.sheet');if(x)x.scrollTop=0},0)}
+function closeRoleSheet(){$('roleSheet').classList.remove('open')}
+let oocEnabled=false;
+function toggleOoc(){oocEnabled=!oocEnabled;const b=$('oocToggle');b.classList.toggle('on',oocEnabled);b.querySelector('span').textContent=oocEnabled?'ON':'OFF';toast(oocEnabled?'导演模式已开启：下一次发送将以导演指令前缀提交':'导演模式已关闭')}
+function openOocSheet(){if(!oocEnabled){toggleOoc();}$('oocSheet').classList.add('open')}
+function closeOocSheet(){$('oocSheet').classList.remove('open')}
+function sendMessage(){const v=$('messageInput').value.trim();if(!v){toast('请输入内容');return;}const payload=oocEnabled?'[导演模式] '+v:v;toast('已发送：'+payload.slice(0,28));$('messageInput').value=''}
+function toggle(x){let c=x.querySelector('.check');if(c)c.classList.toggle('checked')}
+function openPanel(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));$(id).classList.add('open');setTabs(id)}
+function closePanel(id){$(id).classList.remove('open');setTabs('home')}
+function setTabs(active){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  if(active==='characters')$('tabCharacters').classList.add('active');
+  else if(active==='materials')$('tabMaterials').classList.add('active');
+  else if(active==='account')$('tabAccount').classList.add('active');
+  else $('tabConversations').classList.add('active');
+}
+function showConversations(){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));
+  $('conversationHome').style.display='block';$('chatView').style.display='none';$('chatComposer').style.display='none';
+  setTabs('home');
+}
+function openChat(title){
+  $('chatTitle').textContent=title;
+  $('conversationHome').style.display='none';$('chatView').style.display='block';$('chatComposer').style.display='block';
+  setTabs('home');
+  $('content').scrollTop=0;
+}
+function closeChat(){showConversations()}
+function openNewConversation(){$('newConversation').classList.add('open');setTabs('home')}
+
+function openCharacterCreator(){$('characterCreator').classList.add('open')}
+function closeCharacterCreator(){$('characterCreator').classList.remove('open')}
+let userRoleEnabled=false;
+function toggleUserRole(){
+  userRoleEnabled=!userRoleEnabled;
+  $('userRoleSwitch').classList.toggle('on',userRoleEnabled);
+  $('userRoleNote').textContent=userRoleEnabled?'当前：用户角色 · 玩家控制':'当前：NPC · AI 控制';
+}
+function saveCharacter(){closeCharacterCreator();toast(userRoleEnabled?'用户角色卡已保存（演示）':'NPC 角色卡已保存（演示）')}
+
+function closeNewConversation(){$('newConversation').classList.remove('open');setTabs('home')}
+function toggleCreateRole(el){el.classList.toggle('selected');el.querySelector('span').textContent=el.classList.contains('selected')?'✓':''}
+function startNewConversation(){closeNewConversation();openChat('未命名 · 新对话');toast('对话已创建（演示）')}
+function chooseRole(el,name,avatar){
+  document.querySelectorAll('.role-select').forEach(x=>x.classList.remove('selected'));
+  document.querySelectorAll('.role-select .check').forEach(x=>x.classList.remove('checked'));
+  el.classList.add('selected');el.querySelector('.check').classList.add('checked');
+  $('currentRole').textContent=name+(name==='我'?' · 玩家':' · NPC');
+  $('currentAvatar').textContent=avatar;
+  $('messageInput').placeholder='回复 '+name+'……';
+  closeRoleSheet();
+}
+function selectGenRole(el,name){
+  document.querySelectorAll('.role-card').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');
+  document.querySelectorAll('.role-card i').forEach(x=>{x.textContent=''});
+  el.querySelector('i').textContent='✓';
+  toast('生成对象：'+name);
+}
+function openLogin(){openPanel('login')}
+function closeLogin(){$('login').classList.remove('open')}
+function openAdmin(){$('admin').classList.add('open')}
+function closeAdmin(){$('admin').classList.remove('open')}
+function enterView(){closeAdmin();$('viewbar').classList.add('show');showConversations();toast('已切入用户账号 · 只读模式')}
+function exitView(){$('viewbar').classList.remove('show');openAdmin()}
+function toast(t){let x=$('toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),1600)}
+if(location.pathname.endsWith('/admin'))openLogin();
+</script>
+<script id="v9settingsjs">
+function openSettings(id){$(id).classList.add('open')}
+function closeSettings(id){$(id).classList.remove('open')}
+function saveSettings(id){closeSettings(id);toast(id==='modelSettings'?'模型设置已保存（演示）':'全局设置已保存（演示）')}
+</script>
+<script>
+function toggleDetail(id, btn){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const open=el.style.display==='none';
+  el.style.display=open?'block':'none';
+  btn.classList.toggle('open',open);
+}
+</script>
+
+<div id="createRolePage" class="role-create-page" style="display:none;">
+  <div class="role-create-header">
+    <button class="role-back" onclick="closeRoleCreator()">‹</button>
+    <div>
+      <div class="role-create-title">新建角色卡</div>
+      <div class="role-create-subtitle">创建一个新的角色</div>
+    </div>
+    <button class="role-save-top" onclick="saveRoleCard()">保存</button>
+  </div>
+
+  <div class="role-create-scroll">
+    <section class="role-avatar-section">
+      <button class="role-avatar-upload" onclick="document.getElementById('roleAvatarInput').click()">
+        <span class="role-avatar-placeholder default-role-avatar" id="defaultRoleAvatar">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="23" r="12"></circle>
+        <path d="M12 56c2-13 10-20 20-20s18 7 20 20"></path>
+      </svg>
+    </span>
+      </button>
+      <input id="roleAvatarInput" type="file" accept="image/*" hidden>
+      <div class="role-avatar-text">
+        <strong>角色头像</strong>
+        <span>不上传时会自动使用默认头像</span>
+      </div>
+    </section>
+
+    <section class="role-form-card">
+      <div class="role-section-title">基本信息</div>
+
+      <label class="role-field">
+        <span>角色名字 <b>*</b></span>
+        <input id="roleName" placeholder="例如：林月" maxlength="30">
+      </label>
+
+      <label class="role-field">
+        <span>一句话介绍</span>
+        <input placeholder="简单介绍这个角色" maxlength="60">
+      </label>
+
+      <label class="role-field">
+        <span>角色设定 <b>*</b></span>
+        <textarea rows="5" placeholder="写下角色的性格、身份、经历、说话方式等……"></textarea>
+        <small>写得越清楚，角色表现通常越稳定。</small>
+      </label>
+    </section>
+
+    <section class="role-form-card">
+      <div class="role-section-title">与我的关系</div>
+
+      <label class="role-field">
+        <span>关系</span>
+        <input placeholder="例如：朋友、同事、陌生人">
+      </label>
+
+      <label class="role-field">
+        <span>角色怎么称呼我</span>
+        <input placeholder="不填写则使用我的角色名字">
+      </label>
+
+      <label class="role-field">
+        <span>补充关系设定</span>
+        <textarea rows="3" placeholder="例如：认识三年，但最近关系有些疏远……"></textarea>
+      </label>
+    </section>
+
+    <section class="role-form-card">
+      <div class="role-section-head">
+        <div>
+          <div class="role-section-title">初始状态</div>
+          <div class="role-section-desc">进入对话时角色最开始的状态</div>
+        </div>
+      </div>
+
+      <div class="role-two-fields">
+        <label class="role-field">
+          <span>衣服类型</span>
+          <input id="roleClothingType" placeholder="例如：白色研究服">
+        </label>
+        <label class="role-field">
+          <span>服装状态</span>
+          <input id="roleClothingState" placeholder="例如：整洁">
+        </label>
+      </div>
+
+      <label class="role-field">
+        <span>好感度 <b id="roleAffinityValue">0%</b></span>
+        <input id="roleAffinity" type="range" min="0" max="100" value="0">
+      </label>
+
+      <label class="role-field">
+        <span>当前状态</span>
+        <input placeholder="例如：警惕、疲惫">
+      </label>
+
+      <div id="customStateFields"></div>
+
+      <button type="button" class="role-add-field" onclick="addRoleStateField()">＋ 添加状态</button>
+      <label class="role-field"><span>所属分类（可多选）</span><select id="roleCategories" multiple size="4"></select></label>
+    </section>
+
+    <section class="role-form-card role-details-wrap">
+      <button type="button" class="role-details-toggle" onclick="toggleRoleDetails(this)">
+        <span>
+          <strong>详细设置</strong>
+          <small>一般不需要修改</small>
+        </span>
+        <i>⌄</i>
+      </button>
+
+      <div id="roleAdvanced" class="role-advanced" style="display:none;">
+        <label class="role-field">
+          <span>说话习惯</span>
+          <textarea rows="3" placeholder="例如：说话简短，很少主动解释"></textarea>
+        </label>
+
+        <label class="role-field">
+          <span>角色不能忘记的事</span>
+          <textarea rows="3" placeholder="填写特别重要、需要长期保持的设定"></textarea>
+        </label>
+
+        <label class="role-switch-line">
+          <span>
+            <strong>严格保持角色设定</strong>
+            <small>减少角色偏离设定的情况</small>
+          </span>
+          <input type="checkbox" checked>
+        </label>
+      </div>
+    </section>
+
+    <section class="role-user-card">
+      <div class="role-user-icon">我</div>
+      <div class="role-user-copy">
+        <strong>这是我的角色</strong>
+        <span>开启后，这张角色卡代表你自己，不由模型自动回复。</span>
+      </div>
+      <label class="ios-switch">
+        <input id="isUserRole" type="checkbox">
+        <span></span>
+      </label>
+    </section>
+
+    <button class="role-main-save" onclick="saveRoleCard()">保存角色卡</button>
+    <button type="button" class="role-main-save" id="deleteCharacter" hidden>删除角色卡</button>
+    <div class="role-bottom-tip">带 * 的内容需要填写</div>
+  </div>
+</div>
+
+
+<script id="role-create-js">
+function openRoleCreator(){
+  var p=document.getElementById('createRolePage');
+  if(p){p.style.display='block';document.body.style.overflow='hidden';}
+}
+function closeRoleCreator(){
+  var p=document.getElementById('createRolePage');
+  if(p){p.style.display='none';document.body.style.overflow='';}
+}
+function toggleRoleDetails(btn){
+  var p=document.getElementById('roleAdvanced');
+  if(!p)return;
+  var open=p.style.display==='none';
+  p.style.display=open?'block':'none';
+  btn.classList.toggle('open',open);
+}
+function addRoleStateField(){
+  var box=document.getElementById('customStateFields');
+  if(!box)return;
+  var row=document.createElement('div');
+  row.className='custom-state-row';
+  row.innerHTML='<input placeholder="状态名称"><input placeholder="初始内容"><button type="button" onclick="this.parentElement.remove()">×</button>';
+  box.appendChild(row);
+}
+function saveRoleCard(){
+  var n=document.getElementById('roleName');
+  if(n && !n.value.trim()){n.focus();alert('请先填写角色名字');return;}
+  alert('角色卡已保存（当前为界面演示）');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  // 将已有“添加角色卡/新建角色卡”入口统一接到新页面。
+  document.querySelectorAll('button,a').forEach(function(el){
+    var t=(el.textContent||'').trim();
+    if(t.includes('添加角色卡')||t==='新建角色卡'){
+      el.onclick=function(e){e.preventDefault();openRoleCreator();};
+    }
+  });
+});
+</script>
+
+
+<script id="new-conversation-role-picker-js">
+function filterConversationRoles(value){
+  var q=(value||'').trim().toLowerCase();
+  var rows=document.querySelectorAll('#conversationRoleScroll .create-role');
+  var visible=0;
+  rows.forEach(function(row){
+    var text=(row.getAttribute('data-role-search')||row.textContent||'').toLowerCase();
+    var show=!q || text.indexOf(q)!==-1;
+    row.style.display=show?'':'none';
+    if(show) visible++;
+  });
+  var empty=document.getElementById('roleSearchEmpty');
+  if(empty) empty.style.display=visible?'none':'block';
+}
+function clearConversationRoleSearch(){
+  var input=document.getElementById('newConversationRoleSearch');
+  if(input){input.value='';filterConversationRoles('');input.focus();}
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var file=document.getElementById('roleAvatarInput');
+  if(file){
+    file.addEventListener('change',function(){
+      if(!file.files || !file.files[0]) return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var btn=document.querySelector('.role-avatar-upload');
+        if(!btn)return;
+        btn.style.backgroundImage='url("'+e.target.result+'")';
+        btn.style.backgroundSize='cover';
+        btn.style.backgroundPosition='center';
+        var icon=document.getElementById('defaultRoleAvatar');
+        if(icon) icon.style.visibility='hidden';
+      };
+      reader.readAsDataURL(file.files[0]);
+    });
+  }
+});
+</script>
+
+<style id="live-layout">
+.app>.composer{flex:none;margin-bottom:calc(64px + env(safe-area-inset-bottom));position:relative!important;z-index:26}
+.app>.content{padding-bottom:14px!important;min-height:0!important}
+.app>.bottom{height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom)}
+.input-row textarea{font-size:16px;min-width:0}
+.live-error{padding:10px;color:#ad524c;font-size:12px}
+.live-empty{padding:20px;text-align:center;color:#8299a5;font-size:12px}
+.chat-participants{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:0 0 9px;color:#78909c;font-size:10px}.chat-participants>b{white-space:nowrap;color:#476b79}.chat-participants span{white-space:nowrap;padding:5px 8px;border:1px solid #cbe6f0;border-radius:12px;background:#fff}.chat-participants span.player{background:#e8f6fc;color:#318fca}
+.ooc-message{width:min(86%,330px);margin:12px auto;padding:9px 12px;border:1px solid #d9d0f3;border-radius:14px;background:#f3efff;color:#66569e;text-align:center}.ooc-message small{font-weight:800}.ooc-message p{margin:4px 0 0;line-height:1.55}
+.thought-panel{margin:0 0 7px;padding:9px 11px;border-left:3px solid #9a86dc;border-radius:4px;background:#f5f2ff;color:#6a5c91}.thought-panel small{display:block;margin-bottom:3px;color:#8978bd;font-size:9px;font-weight:800}.thought-panel p{margin:0;line-height:1.55;font-size:11px;font-style:italic}
+.turn-bubble{display:flex;flex-direction:column;gap:8px}.turn-bubble p{margin:0}.turn-action{color:#6d838d;font-style:italic;line-height:1.65}.turn-dialogue{color:#183746;font-weight:700;line-height:1.65}
+.msg-main{width:fit-content;max-width:calc(100% - 38px)}.msg .bubble{box-sizing:border-box;width:fit-content;max-width:100%!important}.msg .bubble p{overflow-wrap:break-word;word-break:normal}.player-msg .msg-main{width:fit-content;max-width:calc(100% - 38px)}
+.managed-item{position:relative;margin:8px 0}.managed-item>.conversation{width:100%;margin:0}.character-item{margin:8px 12px}.character-item>.card{margin:0!important}.item-actions{display:flex;justify-content:flex-end;gap:6px;padding:6px 4px 0}.item-actions button{min-width:52px;height:30px;border:1px solid #cde5ee;border-radius:10px;background:#fff;color:#438fac;font-size:10px;font-weight:800}.item-actions button.danger{border-color:#efd3d3;color:#b45d5d;background:#fff8f8}
+.admin-view-banner{position:absolute;z-index:180;top:0;left:0;right:0;height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#fff3df;border-bottom:1px solid #ecd8b5;color:#8a6537;font-size:10px}.admin-view-banner button{height:27px;padding:0 10px;border:1px solid #ddc49d;border-radius:9px;background:#fff;color:#8a6537;font-size:9px;font-weight:800}.admin-viewing>.header{margin-top:38px}.admin-viewing .composer{display:none!important}
+.gen{width:auto!important;min-width:62px!important;padding:0 10px;display:flex;align-items:center;justify-content:center;gap:4px}.gen span{font-size:10px}
+.generation-actions{position:sticky;bottom:calc(-16px - var(--safe-bottom));z-index:4;background:#fff;padding:10px 0 calc(10px + var(--safe-bottom));box-shadow:0 -8px 16px #fff}
+.role-card>em{width:18px;height:18px;display:grid;place-items:center;border-radius:7px;background:#55b7e2;color:#fff;font-size:8px;font-style:normal;flex:none}.order-controls{margin-left:auto;display:flex;gap:4px}.order-controls i{position:static!important;display:grid!important;place-items:center;width:25px!important;height:25px!important;line-height:1!important;color:#4b94b3!important;background:#e4f4fa!important}
+.generation-role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px}.generation-role-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:7px;padding:7px;border:1px solid #d8e9ef;border-radius:15px;background:#fff}.generation-role-card.selected{border-color:#8fd1ea;background:#eef9fd}.generation-role-toggle{display:flex;align-items:center;gap:7px;min-width:0;border:0;background:transparent;text-align:left;padding:2px;color:#456a78}.generation-role-toggle .avatar{width:34px;height:34px;border-radius:11px;font-size:10px;flex:none}.role-order{display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:#e5f2f6;color:#6b97a6;font-size:9px;font-weight:900;flex:none}.generation-role-card.selected .role-order{background:#55b7e2;color:#fff}.generation-role-copy{display:grid;min-width:0;gap:2px}.generation-role-copy b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.generation-role-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8da0aa;font-size:8px}.role-participation{margin-left:auto;padding:4px 6px;border-radius:8px;background:#dff3fb;color:#428eac;font-size:8px;font-weight:800;white-space:nowrap}.generation-role-card:not(.selected) .role-participation{background:#f2f5f6;color:#9aaab0}.generation-role-card .order-controls{align-self:center}.generation-role-card .order-controls button{width:27px;height:27px;border:1px solid #cfe7ef;border-radius:8px;background:#f2fafc;color:#4d95ad}.generation-role-card:not(.selected) .order-controls{opacity:.55}
+@media(max-width:430px){.generation-role-grid{grid-template-columns:1fr}.generation-role-card{min-height:58px}}
+.model-actions{display:flex;gap:7px;margin:8px 0}.model-actions button{flex:1;min-height:42px;border:1px solid #cbe6f0;border-radius:14px;background:#f1f9fc;color:#3b8eae;font-weight:800}.model-status{min-height:20px;color:#597783;font-size:10px;text-align:center}
+.provider-apply{display:block;margin-top:6px;color:#318fca;font-size:10px;font-weight:800;text-decoration:none}.model-status.success{color:#23835d}.model-status.error{color:#b34c4c}
+#sheet{z-index:120!important}
+#sheet .generation-sheet{height:min(88dvh,720px)!important;max-height:none!important;overflow-y:auto!important;overscroll-behavior:contain;padding-bottom:calc(12px + var(--safe-bottom))!important}
+#sheet .generation-actions{bottom:calc(-12px - var(--safe-bottom));margin-left:-1px;margin-right:-1px}
+[hidden]{display:none!important}
+.settings-panel#worldBookSettings,.settings-panel#worldBookEditor{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+.worldbook-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:8px 0 12px}.worldbook-summary div{padding:10px 6px;border:1px solid #d7eaf0;border-radius:8px;background:#fff;text-align:center}.worldbook-summary b{display:block;color:#397f9b;font-size:15px}.worldbook-summary small{color:#91a5ad;font-size:8px}.worldbook-tools{display:grid;grid-template-columns:1fr 96px;gap:7px;margin-bottom:10px}.worldbook-tools input,.worldbook-tools select,.worldbook-field input,.worldbook-field select,.worldbook-field textarea{box-sizing:border-box;width:100%;border:1px solid #d4e8ef;border-radius:10px;background:#fff;color:#526f7b;font-size:11px;outline:none}.worldbook-tools input,.worldbook-tools select,.worldbook-field input,.worldbook-field select{height:39px;padding:0 10px}.worldbook-field textarea{min-height:132px;padding:10px;line-height:1.6;resize:vertical}.worldbook-list{display:flex;flex-direction:column;gap:8px}.worldbook-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:11px;border:1px solid #d6e9ef;border-radius:8px;background:#fff;text-align:left}.worldbook-row>button:first-child{border:0;background:none;text-align:left;padding:0;color:inherit}.worldbook-row h3{margin:0;color:#3f6675;font-size:12px}.worldbook-row p{margin:5px 0;color:#899fa8;font-size:9px;line-height:1.5}.worldbook-tags{display:flex;gap:5px;flex-wrap:wrap}.worldbook-tags span{padding:3px 6px;border-radius:7px;background:#edf8fc;color:#4c91ae;font-size:8px}.worldbook-row.off{opacity:.58}.worldbook-toggle{align-self:center;width:39px;height:23px;border:0;border-radius:13px;background:#dce9ed;padding:3px}.worldbook-toggle i{display:block;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #b3c5cb}.worldbook-toggle.on{background:#72c5e8}.worldbook-toggle.on i{transform:translateX(16px)}.worldbook-add{position:sticky;bottom:8px;width:100%;height:44px;margin-top:12px;border:0;border-radius:12px;background:#69badd;color:#fff;font-size:11px;font-weight:900;box-shadow:0 7px 17px rgba(83,176,215,.2)}.worldbook-field{display:block;margin:10px 0}.worldbook-field>span{display:block;margin:0 0 5px;color:#678591;font-size:9px;font-weight:800}.worldbook-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.worldbook-editor-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.worldbook-editor-actions button{height:42px;border-radius:11px;font-size:10px;font-weight:900}.worldbook-editor-actions .remove{border:1px solid #efd0d0;background:#fff8f8;color:#b35a5a}.worldbook-editor-actions .save{border:0;background:#69badd;color:#fff}.worldbook-preview-result{min-height:48px;margin-top:8px;padding:9px;border:1px dashed #c6e0e9;border-radius:9px;background:#f8fcfd;color:#708b96;font-size:9px;line-height:1.55}
+.worldbook-commandbar{display:flex;gap:7px;margin:0 0 10px}.worldbook-commandbar button,.worldbook-tools button,.worldbook-selection-toolbar button{min-height:36px;border:1px solid #cde4ec;border-radius:8px;background:#fff;color:#4d8195;font-size:9px;font-weight:800}.worldbook-commandbar button{flex:1}.worldbook-tree{margin-bottom:10px;border:1px solid #d8eaf0;border-radius:8px;background:#fff;overflow:hidden}.worldbook-tree:empty{display:none}.worldbook-category{display:flex;align-items:center;gap:6px;min-height:34px;padding:4px 8px;border-bottom:1px solid #eef5f7;color:#557884;font-size:9px}.worldbook-category:last-child{border-bottom:0}.worldbook-category button{border:0;background:none;color:#60a7c3;font-weight:900}.worldbook-selection-toolbar{position:sticky;top:54px;z-index:3;display:flex;align-items:center;gap:7px;padding:7px;border:1px solid #cce4ec;border-radius:8px;background:#f7fcfe}.worldbook-selection-toolbar span{flex:1;color:#557884;font-size:9px;font-weight:800}.worldbook-row.manage{grid-template-columns:auto 1fr}.worldbook-row.manage>input{align-self:center}.worldbook-import-preview{margin-top:8px;padding:9px;border:1px solid #d8cffa;border-radius:8px;background:#f8f5ff;color:#65578d;font-size:9px}
+.worldbook-book-tools{grid-template-columns:minmax(0,1fr) 58px 58px}.worldbook-book-tools button.danger{border-color:#efd0d0;background:#fff8f8;color:#b35a5a}
+@media(max-height:540px){.app>.composer{margin-bottom:calc(56px + env(safe-area-inset-bottom))}.app>.bottom{height:calc(56px + env(safe-area-inset-bottom))}}
+</style>
+<style id="adult-preference-ui">
+.adult-preference-card{border-color:#ddd4f3;background:#fcfaff}.adult-preference-view{width:100%;min-height:38px;border:1px solid #d8cff1;border-radius:12px;background:#f6f1ff;color:#705eaa;font-size:10px;font-weight:800}.adult-preference-recorded{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:9px;border:1px dashed #ddd2f3;border-radius:12px;background:#faf8ff}.adult-preference-recorded:empty:before{content:'还没有记录的自定义偏好';color:#a296ba;font-size:9px}.adult-preference-recorded span{padding:5px 8px;border-radius:9px;background:#eee8ff;color:#705fa3;font-size:8px;line-height:1.3}.adult-preference-field{margin-top:10px}.adult-preference-field>span{display:block;margin-bottom:5px;color:#7a6d9f;font-size:9px;font-weight:800}.adult-preference-field textarea{height:72px;min-height:72px;background:#fffaff;border-color:#ded5f0;font-size:10px;line-height:1.55}.adult-preference-examples{margin-top:9px}.adult-preference-examples>small{display:block;color:#998eaf;font-size:8px;margin-bottom:5px}.adult-preference-examples>div{display:flex;flex-wrap:wrap;gap:5px}.adult-preference-examples button{border:1px solid #ded5f0;border-radius:9px;background:#fff;color:#786aa0;padding:6px 7px;font-size:8px}
+</style>
+<script type="module" src="{% static 'assets/prototype-app.js' %}?v=20260923-adult-preference"></script>
+<script type="module" src="{% static 'assets/disaster-recovery.js' %}?v=20260925-ha"></script>
+</body>
+<style>
+.usage-panel{margin:9px 0;padding:10px;border:1px solid #d4eaf2;border-radius:14px;background:#f7fcfe;display:grid;grid-template-columns:1fr auto;gap:5px 9px}.usage-panel b,.usage-panel small{display:block}.usage-panel b{font-size:9px;color:#4f7482}.usage-panel small,.usage-panel p{font-size:7px;color:#8ca2ab}.usage-panel p{grid-column:1/-1;margin:2px 0}.usage-panel button{border:1px solid #bfe1ed;border-radius:10px;background:#fff;color:#3d91af;padding:6px 10px}.affinity-line{margin-top:9px}.affinity-line>div{display:flex;justify-content:space-between;font-size:8px;color:#668590}.affinity-bar{height:7px;border-radius:5px;background:#dceef4;overflow:hidden;margin-top:4px}.affinity-bar i{display:block;height:100%;background:#65c0df;border-radius:inherit}.environment-card{position:sticky;top:0;z-index:4}.env-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.env-desc.expanded{-webkit-line-clamp:unset}
+.character-category,.worldbook-category{margin:6px 0;border:1px solid #d8ebf1;border-radius:14px;background:#fff;overflow:hidden}.character-category>summary,.worldbook-category>summary{display:flex;align-items:center;gap:7px;padding:10px 11px;color:#527987;cursor:pointer;list-style:none}.character-category>summary::-webkit-details-marker,.worldbook-category>summary::-webkit-details-marker{display:none}.character-category>summary:before,.worldbook-category>summary:before{content:'›';display:grid;place-items:center;width:18px;height:18px;border-radius:6px;background:#e8f6fa;color:#5a9cb2;transition:transform .15s}.character-category[open]>summary:before,.worldbook-category[open]>summary:before{transform:rotate(90deg)}.category-actions{margin-left:auto;display:flex;gap:4px}.category-actions button,.category-actions a{border:1px solid #cfe7ee;border-radius:8px;background:#f8fdfe;color:#5a98ab;padding:3px 6px;font-size:10px;text-decoration:none}.worldbook-folder-entry{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 16px);margin:4px 8px;padding:8px;border:1px solid #edf4f6;border-radius:9px;background:#fbfeff;text-align:left;color:#4f7784}.worldbook-folder-entry small{color:#99adb5;font-size:8px}.character-category>.character-item{margin:0 8px 8px}.character-category>.character-category{margin:0 8px 8px}.role-card{display:flex;align-items:stretch;gap:5px}.role-toggle{display:flex;align-items:center;gap:7px;flex:1;border:0;background:transparent;text-align:left;padding:8px;min-width:0}.role-toggle em{width:18px;color:#5b9db4;font-style:normal;text-align:center}.role-toggle i{margin-left:auto}.role-card .order-controls{align-self:center;margin-right:6px}.role-card .order-controls button{width:26px;height:26px;border:1px solid #cfe7ef;border-radius:8px;background:#f2fafc;color:#4d95ad}.stream-preview{margin:8px 0;padding:9px;border:1px dashed #a8d6e5;border-radius:12px;background:#f8fdff;color:#66838e}.stream-preview p{margin:4px 0;font-size:10px;white-space:pre-wrap}.stream-preview button,.waiting button{border:1px solid #b9ddea;border-radius:9px;background:#fff;color:#3985a1;padding:5px 8px;font-size:9px}
+</style>
+<style id="worldbook-folder-layout-fix">
+details.worldbook-category{display:block;min-height:0;padding:0;border-bottom:0}
+details.worldbook-category>summary{display:flex;align-items:center;gap:7px}
+details.worldbook-category>summary .category-actions button.danger{border-color:#efd0d0;background:#fff8f8;color:#b35a5a}
+details.worldbook-category>button.worldbook-folder-entry{display:flex;border:1px solid #edf4f6;background:#fbfeff;color:#4f7784;font-weight:400}
+.category-count{color:#9aadb5;font-size:8px;font-weight:500}
+body.worldbook-editor-open .app>.bottom{display:none!important}body.worldbook-editor-open .app>.content{padding-bottom:14px!important}body.worldbook-editor-open #worldBookEditor{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+.settings-panel{z-index:20!important}
+.worldbook-folder-entry{position:relative;grid-template-columns:9px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:48px!important;padding:8px 10px!important;text-decoration:none}.worldbook-entry-mark{width:8px;height:28px;border-radius:5px;background:#9dbfc9}.worldbook-entry-copy{display:grid;min-width:0;gap:3px}.worldbook-entry-copy b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font-size:10px}.worldbook-entry-copy small{color:currentColor!important;opacity:.62;font-size:8px}.worldbook-entry-kind{padding:4px 7px;border-radius:8px;background:rgba(255,255,255,.72);color:currentColor;font-size:8px;font-weight:800;white-space:nowrap}.worldbook-entry-keyword{border-color:#c9e7d3!important;background:#f2fbf5!important;color:#3d7655!important}.worldbook-entry-keyword .worldbook-entry-mark{background:#63b783}.worldbook-entry-always{border-color:#ded2f1!important;background:#f7f2ff!important;color:#69578e!important}.worldbook-entry-always .worldbook-entry-mark{background:#987bd0}.worldbook-entry-manual{border-color:#f0ddb9!important;background:#fff9ed!important;color:#8a6a35!important}.worldbook-entry-manual .worldbook-entry-mark{background:#d5a354}.worldbook-entry-default{border-color:#c9e3ea!important;background:#f3fafc!important;color:#4f7784!important}.worldbook-entry-disabled{opacity:.5;filter:saturate(.45)}
+  .generation-timing{margin-top:7px;padding-top:6px;border-top:1px solid #deedf2;color:#7b98a4}.generation-timing small{display:block;margin-bottom:4px;font-weight:800;color:#5a8797}.generation-timing>div{display:flex;flex-wrap:wrap;gap:4px 9px}.generation-timing span{font-size:9px}.generation-timing b{color:#3f7181}
+</style>
+</html>

@@ -1,0 +1,276 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>酒馆管理</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#f3f8fc;color:#294457}
+button,input{font:inherit}.app{min-height:100dvh;background:#f3f8fc}
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);padding:calc(12px + env(safe-area-inset-top,0px)) 15px 11px;border-bottom:1px solid #e5eef5}
+.toprow{display:flex;align-items:center;justify-content:space-between}.title{font-size:19px;font-weight:800}.sub{font-size:11px;color:#93a5b2;margin-top:3px}.admin{padding:7px 10px;border-radius:12px;background:#eaf5fc;color:#558cae;font-size:12px;font-weight:700}
+.content{padding:14px 12px calc(88px + env(safe-area-inset-bottom,0px));max-width:520px;margin:auto}
+.notice{padding:12px 13px;border-radius:17px;background:#eaf6fd;border:1px solid #d8ebf7;font-size:12px;color:#63859b;line-height:1.55;margin-bottom:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat{background:#fff;border:1px solid #e4eef5;border-radius:18px;padding:13px 10px}.stat b{display:block;font-size:21px;color:#407da3}.stat span{font-size:11px;color:#92a4b0}
+.sectionhead{display:flex;justify-content:space-between;align-items:end;margin:15px 2px 9px}.sectionhead b{font-size:15px}.sectionhead span{font-size:11px;color:#99aab5}
+.search{height:45px;background:#fff;border:1px solid #dfeaf2;border-radius:15px;display:flex;align-items:center;padding:0 12px;gap:8px;margin-bottom:10px}.search span{color:#82a7bd;font-size:20px}.search input{border:0;outline:0;background:transparent;width:100%;font-size:16px;color:#344f61}
+.userlist{max-height:430px;overflow:auto;-webkit-overflow-scrolling:touch}.user{width:100%;border:1px solid #e4eef5;background:#fff;border-radius:18px;padding:12px;margin-bottom:9px;display:grid;grid-template-columns:45px 1fr auto;gap:10px;align-items:center;text-align:left;color:inherit}.avatar{width:45px;height:45px;border-radius:15px;background:#e6f4fb;display:grid;place-items:center;color:#5894b7;font-weight:800}.userinfo b{display:block;font-size:14px}.userinfo small{display:block;color:#91a4b1;font-size:11px;margin-top:4px}.go{color:#7ea8c0;font-size:22px}
+.bottom{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);border-top:1px solid #e4edf4;padding:7px 12px calc(7px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr 1fr;gap:8px}.bottom[hidden]{display:none!important}.nav{border:0;background:transparent;padding:7px;color:#91a3af;font-size:11px}.nav b{display:block;font-size:19px;margin-bottom:2px}.nav.active{color:#4e96bf}
+.view{display:none}.view.active{display:block}
+.backbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}.back{width:38px;height:38px;border:0;border-radius:13px;background:#e9f4fb;color:#4f8eb3;font-size:25px}.viewtitle b{display:block;font-size:16px}.viewtitle small{color:#93a5b2}
+.readonly{padding:10px 12px;border-radius:14px;background:#fff3df;color:#a07842;font-size:11px;border:1px solid #f2dfbf;margin-bottom:10px}
+.phonepreview{background:#fff;border:1px solid #e3edf4;border-radius:22px;overflow:hidden}.fakehead{padding:13px;border-bottom:1px solid #edf2f6;font-weight:800}.conversation{padding:12px}.conv{padding:12px;border-radius:16px;background:#f7fbfe;margin-bottom:9px}.conv b{font-size:13px}.conv p{font-size:12px;color:#718897;margin:5px 0 0;line-height:1.5}.openaccount{width:100%;height:48px;border:0;border-radius:16px;background:#6fb4da;color:#fff;font-weight:800;margin-top:12px}
+.settings{background:#fff;border:1px solid #e4eef5;border-radius:18px;overflow:hidden}.row{padding:14px;border-bottom:1px solid #edf2f5;display:flex;justify-content:space-between}.row:last-child{border:0}.row span{font-size:13px}.row small{color:#93a5b2}
+.admin-logout{width:100%;height:46px;margin-top:14px;border:1px solid #efcece;border-radius:14px;background:#fff7f7;color:#b55252;font-size:13px;font-weight:800}
+.delete-user{width:100%;height:44px;margin-top:10px;border:1px solid #efcece;border-radius:14px;background:#fff7f7;color:#b55252;font-size:12px;font-weight:800}
+.policy-note{font-size:10px;line-height:1.55;color:#92a5b2;background:#f3f8fb;padding:10px;border-radius:12px;margin-top:10px}
+.publish-update{width:100%;height:49px;border:0;border-radius:16px;background:#6f68d9;color:#fff;font-weight:800;margin:4px 0 14px}.update-history{background:#fff;border:1px solid #e4eef5;border-radius:18px;overflow:hidden}.update-history-item{padding:13px 14px;border-bottom:1px solid #edf3f6}.update-history-item:last-child{border-bottom:0}.update-history-item b{font-size:13px}.update-history-item small{float:right;color:#93a5b2;font-size:10px}.update-history-item p{margin:6px 0 0;color:#7d929e;font-size:10px;line-height:1.5}.update-badge{display:inline-block;margin-left:6px;padding:3px 7px;border-radius:9px;background:#eeeaff;color:#6c60bf;font-size:9px}.server-address{font-size:18px;color:#407da3;font-weight:800;word-break:break-all}.account-list{margin-top:12px}.account-row{padding:12px 0;border-bottom:1px solid #edf3f6;display:flex;justify-content:space-between;gap:12px}.account-row:last-child{border-bottom:0}.account-row b{font-size:12px}.account-row small{display:block;color:#93a5b2;font-size:10px;margin-top:4px}.account-role{color:#5d72bd;font-weight:800;font-size:10px;white-space:nowrap}
+@media(min-width:700px){.content{padding-top:22px}.bottom{max-width:520px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}}
+</style>
+
+<style id="admin-global-defaults">
+.setting-entry{
+ width:100%;border:0;border-bottom:1px solid #edf2f5;background:#fff;
+ padding:14px;display:flex;justify-content:space-between;align-items:center;text-align:left;color:#294457
+}
+.setting-entry span{display:flex;flex-direction:column;gap:3px}
+.setting-entry b{font-size:13px}.setting-entry small{font-size:11px;color:#93a5b2}.setting-entry i{font-style:normal;font-size:22px;color:#85a8bc}
+.global-card{background:#fff;border:1px solid #e4eef5;border-radius:18px;padding:15px;margin-bottom:11px}
+.global-title{font-size:15px;font-weight:800;margin-bottom:4px}
+.admin-field{display:block;margin-top:13px}.admin-field>span{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+.admin-field input,.admin-field select,.admin-field textarea{
+ width:100%;min-height:44px;border:1px solid #deebf3;border-radius:13px;background:#f8fbfd;
+ padding:10px 11px;font-size:16px;color:#314c5e;outline:none;font-family:inherit;resize:none
+}
+.admin-switch{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #edf3f6}
+.admin-switch:last-child{border-bottom:0}.admin-switch span{display:flex;flex-direction:column;gap:3px}.admin-switch b{font-size:12px}.admin-switch small{font-size:10px;color:#96a8b4}.admin-switch input{width:20px;height:20px}
+.admin-detail-toggle{
+ width:100%;border:1px solid #dfeef7;background:#f7fbfe;border-radius:17px;padding:13px 15px;
+ margin-bottom:11px;display:flex;justify-content:space-between;align-items:center;text-align:left;color:#36566b
+}
+.admin-detail-toggle span{display:flex;flex-direction:column;gap:3px}.admin-detail-toggle b{font-size:13px}.admin-detail-toggle small{font-size:10px;color:#95a8b5}.admin-detail-toggle i{font-style:normal;font-size:20px;transition:.2s}.admin-detail-toggle.open i{transform:rotate(180deg)}
+.default-tip{font-size:10px;line-height:1.5;color:#92a5b2;background:#f3f8fb;padding:10px;border-radius:12px;margin-top:10px}
+.save-global{width:100%;height:49px;border:0;border-radius:16px;background:#6fb4da;color:#fff;font-weight:800;margin:4px 0 14px}
+</style>
+
+<style id="admin-credential-v4">
+.credential-card{
+ background:#fff;border:1px solid #e4eef5;border-radius:18px;padding:15px;margin-bottom:11px
+}
+.credential-title{font-size:14px;font-weight:800;margin-bottom:7px}
+.credential-row{
+ min-height:43px;display:flex;align-items:center;justify-content:space-between;
+ border-bottom:1px solid #edf3f6;font-size:12px
+}
+.credential-row span{color:#7f95a4}.credential-row b{font-size:13px;color:#36566b}
+.credential-note{font-size:10px;line-height:1.55;color:#93a6b3;padding:10px 0}
+.reset-password{
+ width:100%;height:43px;border:1px solid #d9eaf4;border-radius:14px;
+ background:#f4faff;color:#5592b6;font-weight:700
+}
+.reset-modal{
+ position:fixed;inset:0;z-index:100;background:rgba(31,51,65,.28);
+ display:none;align-items:flex-end
+}
+.reset-box{
+ width:100%;background:#fff;border-radius:24px 24px 0 0;
+ padding:18px 15px calc(18px + env(safe-area-inset-bottom,0px))
+}
+.reset-box h3{margin:0 0 4px;font-size:16px}.reset-box p{margin:0 0 14px;font-size:11px;color:#91a4b1}
+.reset-box input{
+ width:100%;height:46px;border:1px solid #dceaf3;border-radius:14px;
+ background:#f8fbfd;padding:0 12px;font-size:16px;outline:none;margin-bottom:9px
+}
+.reset-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
+.reset-actions button{height:45px;border:0;border-radius:14px;font-weight:700}
+.reset-cancel{background:#eef4f8;color:#708795}.reset-confirm{background:#6fb4da;color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="toprow"><div><div class="title">酒馆管理</div><div class="sub">管理员专用页面</div></div><div class="admin" id="adminIdentity">管理员</div></div></header>
+
+<main class="content">
+<section id="adminLogin" class="view active">
+ <div class="backbar"><div class="viewtitle"><b>管理员入口</b><small>普通用户请从普通登录页进入酒馆</small></div></div>
+ <div class="notice">只有管理员账号可以从这里进入后台。管理员从普通登录页登录时，也会和普通用户一样进入酒馆。</div>
+ <div class="global-card">
+   <div class="global-title">管理员登录</div>
+   <label class="admin-field"><span>管理员账号</span><input id="adminLoginUsername" autocomplete="username" placeholder="请输入管理员账号"></label>
+   <label class="admin-field"><span>密码</span><input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="请输入密码"></label>
+   <p class="auth-error" id="adminLoginError" role="alert" hidden></p>
+   <button class="publish-update" id="adminLoginSubmit" type="button">登录管理员面板</button>
+ </div>
+</section>
+
+<section id="users" class="view">
+ <div class="notice">这里不会出现在普通用户的界面中。管理员选择用户后，可以进入该用户的账号视角查看其对话内容。</div>
+ <div class="notice" id="federationStatus" aria-live="polite">正在读取总站连接状态…</div>
+ <div class="stats"><div class="stat"><b>128</b><span>用户</span></div><div class="stat"><b>436</b><span>对话</span></div><div class="stat"><b>27</b><span>今日活跃</span></div></div>
+ <div class="sectionhead"><b>用户</b><span>点击进入查看</span></div>
+ <div class="search"><span>⌕</span><input id="q" placeholder="搜索用户名" oninput="filterUsers(this.value)"></div>
+ <div class="userlist">
+  <button class="user" data-name="夜行者" onclick="openUser('夜行者')"><div class="avatar">夜</div><div class="userinfo"><b>夜行者</b><small>账号：nightwalker · 12 次对话</small></div><div class="go">›</div></button>
+  <button class="user" data-name="白鸦" onclick="openUser('白鸦')"><div class="avatar">白</div><div class="userinfo"><b>白鸦</b><small>账号：whitecrow · 8 次对话</small></div><div class="go">›</div></button>
+  <button class="user" data-name="零号" onclick="openUser('零号')"><div class="avatar">零</div><div class="userinfo"><b>零号</b><small>账号：zero · 21 次对话</small></div><div class="go">›</div></button>
+ </div>
+</section>
+
+<section id="userdetail" class="view">
+ <div class="backbar"><button class="back" onclick="show('users')">‹</button><div class="viewtitle"><b id="username">夜行者</b><small>用户账号</small></div></div>
+ <div class="readonly">管理员查看中 · 当前为只读模式，不会替用户发送消息。</div>
+ <div class="credential-card">
+   <div class="credential-title">账号信息</div>
+   <div class="credential-row"><span>登录账号</span><b id="loginAccount">nightwalker</b></div>
+   <div class="credential-row"><span>登录密码</span><b>••••••••</b></div>
+   <div class="credential-note">密码不显示原文。管理员可以直接为用户设置新密码。</div>
+   <button class="reset-password" onclick="openResetPassword()">设置新密码</button>
+ </div>
+ <div class="phonepreview">
+   <div class="fakehead">这个用户的对话</div>
+   <div class="conversation">
+    <div class="conv"><b>雨夜 · 霓虹酒馆</b><p>莉亚、凯恩 · 今天 11:42</p></div>
+    <div class="conv"><b>地下研究所</b><p>榆泽 · 昨天 23:18</p></div>
+    <div class="conv"><b>旧城区</b><p>星玄、诺拉 · 9 月 15 日</p></div>
+   </div>
+ </div>
+ <button class="openaccount" id="openUserAccount">进入该用户账号</button>
+ <button class="delete-user" id="deleteUser">删除这个用户的全部数据</button>
+</section>
+
+<section id="settings" class="view">
+ <div class="sectionhead"><b>管理设置</b><span>仅管理员可见</span></div>
+ <div class="settings">
+  <button class="setting-entry" data-site-admin-or-global onclick="showGlobalDefaults()">
+     <span><b>本站默认配置</b><small>设置本站用户首次使用时的默认值</small></span><i>›</i>
+  </button>
+  <button class="setting-entry" data-site-admin-or-global onclick="show('marketAdmin')">
+    <span><b>素材市场管理</b><small>市场连接、跨站审批与举报审核</small></span><i>›</i>
+  </button>
+  <div class="row"><span>管理员账号</span><small id="adminAccountName">当前账号</small></div>
+  <div class="row"><span>用户数据查看</span><small>只读</small></div>
+  <button class="row" id="auditEntry" style="width:100%;border:0;background:none;text-align:left"><span>操作记录</span><small>查看 ›</small></button>
+ </div>
+ <button type="button" class="admin-logout" id="adminLogout">退出管理员账号</button>
+
+</section>
+
+ <section id="globaldefaults" class="view" data-site-admin-or-global>
+  <div class="backbar"><button class="back" onclick="show('settings')">‹</button><div class="viewtitle"><b>本站默认配置</b><small>新用户默认使用这些设置</small></div></div>
+
+ <div class="notice">这里设置的是全站默认值。用户没有自己修改时，就使用这里的配置；用户自己修改后，以用户自己的设置为准。</div>
+
+ <div class="global-card">
+   <div class="global-title">模型默认设置</div>
+   <label class="admin-field"><span>模型地址</span><input id="defaultApiBase" placeholder="填写默认服务地址"></label>
+   <label class="admin-field"><span>连接密钥</span><input id="defaultApiKey" type="password" placeholder="填写默认密钥"></label>
+   <label class="admin-field"><span>默认模型</span><input id="defaultModel" placeholder="默认模型"></label>
+   
+ </div>
+
+ <div class="global-card">
+   <div class="global-title">本站默认偏好</div>
+   <label class="admin-field"><span>默认角色提示</span><textarea id="defaultPrompt" rows="4" placeholder="不填写则使用系统默认内容"></textarea></label>
+   <label class="admin-switch"><span><b>严格保持角色设定</b><small>默认开启</small></span><input type="checkbox" checked></label>
+   <label class="admin-switch"><span><b>自动整理角色状态</b><small>默认开启</small></span><input type="checkbox" checked></label>
+   <label class="admin-switch"><span><b>边生成边显示</b><small>默认开启</small></span><input type="checkbox" checked></label>
+ </div>
+
+ <button class="admin-detail-toggle" onclick="toggleAdminDetail(this)">
+   <span><b>详细设置</b><small>一般不需要修改</small></span><i>⌄</i>
+ </button>
+ <div id="adminAdvanced" class="global-card admin-advanced" style="display:none">
+   <label class="admin-field"><span>回复随机度</span><input id="defaultTemperature" type="number" placeholder="默认 1.0" step="0.1"></label>
+   <label class="admin-field"><span>回复范围</span><input id="defaultTopP" type="number" placeholder="默认 1.0" step="0.01"></label>
+   <label class="admin-field"><span>默认回复长度</span><input id="defaultMaxTokens" type="number" placeholder="留空使用常用值"></label>
+   <label class="admin-switch"><span><b>保存原始回复</b><small>默认关闭</small></span><input type="checkbox"></label>
+   <div class="default-tip">这些项目留空时，系统自动采用最常用的默认设置。</div>
+ </div>
+
+ <div class="global-card">
+   <div class="global-title">新用户默认内容</div>
+   <label class="admin-field"><span>默认欢迎语</span><textarea id="defaultWelcome" rows="3" placeholder="欢迎来到酒馆……"></textarea></label>
+   <label class="admin-field"><span>默认场景名称</span><input id="defaultScene" placeholder="例如：霓虹酒馆"></label>
+ </div>
+
+  <button class="save-global" id="saveGlobal">保存本站默认配置</button>
+</section>
+
+<section id="marketAdmin" class="view" data-site-admin-or-global hidden>
+ <div class="backbar"><button class="back" onclick="show('settings')">‹</button><div class="viewtitle"><b>素材市场管理</b><small>本站市场与公共市场连接</small></div></div>
+ <div class="notice">公共市场地址留空时，本部署提供公共素材市场；填写其他部署的地址时，本网站会申请连接，需对方管理员批准后才能跨站发布。</div>
+ <div class="global-card">
+  <div class="global-title">公共市场连接</div>
+  <label class="admin-field"><span>公共市场地址</span><input id="adminMarketUrl" placeholder="留空表示当前部署是公共市场主站"></label>
+  <div id="adminMarketConnectionStatus" class="policy-note">正在读取连接状态…</div>
+  <button class="save-global" id="saveMarketConnection" type="button">保存并测试连接</button>
+  <button class="admin-logout" id="rotateMarketKey" type="button">重新生成连接密钥</button>
+ </div>
+ <div class="sectionhead"><b>已登记网站</b><span>仅公共市场主站审批有效</span></div>
+ <div id="marketSitesList" class="market-admin-list"><div class="notice">正在读取…</div></div>
+ <div class="sectionhead"><b>素材举报</b><span>最近 200 条</span></div>
+ <div id="marketReportsList" class="market-admin-list"><div class="notice">正在读取…</div></div>
+ <div class="sectionhead"><b>市场素材</b><span>可隐藏或恢复</span></div>
+ <div id="marketAdminListings" class="market-admin-list"><div class="notice">正在读取…</div></div>
+</section>
+<section id="audit" class="view"><div class="backbar"><button class="back" onclick="show('settings')">‹</button><div class="viewtitle"><b>操作记录</b><small>最近 100 条</small></div></div><div id="auditList" class="settings"></div></section>
+</main>
+
+<nav class="bottom">
+ <button class="nav active" id="navUsers" onclick="show('users')"><b>♙</b>用户</button>
+ <button class="nav" id="navSettings" onclick="show('settings')"><b>⚙</b>设置</button>
+</nav>
+</div>
+<script>
+function show(id){
+ document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelector('.bottom').hidden=id==='adminLogin';
+ document.getElementById('navUsers').classList.toggle('active',id==='users'||id==='userdetail');
+ document.getElementById('navSettings').classList.toggle('active',['settings','globaldefaults','marketAdmin','audit'].includes(id));
+}
+function openUser(name){
+ document.getElementById('username').textContent=name;
+ var map={'夜行者':'nightwalker','白鸦':'whitecrow','零号':'zero'};
+ var account=document.getElementById('loginAccount');
+ if(account) account.textContent=map[name]||name;
+ show('userdetail')
+}
+function filterUsers(q){q=q.trim().toLowerCase();document.querySelectorAll('.user').forEach(x=>x.style.display=(x.dataset.name.toLowerCase().includes(q)?'grid':'none'))}
+</script>
+
+<script>
+function showGlobalDefaults(){show('globaldefaults')}
+function toggleAdminDetail(btn){
+ var box=document.getElementById('adminAdvanced');
+ var open=box.style.display==='none';
+ box.style.display=open?'block':'none';
+ btn.classList.toggle('open',open);
+}
+</script>
+
+<div id="resetPasswordModal" class="reset-modal">
+ <div class="reset-box">
+  <h3>设置新密码</h3>
+  <p>为当前用户直接设置一个新的登录密码。</p>
+  <input id="newPassword" type="password" placeholder="输入新密码">
+  <input id="newPassword2" type="password" placeholder="再次输入新密码">
+  <div class="reset-actions">
+   <button class="reset-cancel" onclick="closeResetPassword()">取消</button>
+   <button class="reset-confirm" onclick="saveResetPassword()">确认修改</button>
+  </div>
+ </div>
+</div>
+<script>
+function openResetPassword(){document.getElementById('resetPasswordModal').style.display='flex'}
+function closeResetPassword(){document.getElementById('resetPasswordModal').style.display='none'}
+function saveResetPassword(){
+ var a=document.getElementById('newPassword').value,b=document.getElementById('newPassword2').value;
+ if(!a){alert('请输入新密码');return}
+ if(a!==b){alert('两次密码不一致');return}
+ closeResetPassword()
+}
+</script>
+<script type="module" src="{% static 'assets/prototype-admin.js' %}?v=20260921-admin-identity"></script>
+</body></html>
