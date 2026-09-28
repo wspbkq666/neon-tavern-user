@@ -28,6 +28,7 @@ class SmartImportNormalizationTests(SimpleTestCase):
         result = {"items": [{"type": "npc", "fields": {"name": "Lin", "first_mes": "Hello", "alternate_greetings": ["Hi"], "character_worldbook": {"entries": []}}, "source_excerpt": "Lin", "confidence": 0.7, "warnings": []}]}
         drafts, _ = normalize_smart_import(result)
         self.assertNotIn("first_mes", drafts[0]["fields"])
+        self.assertEqual(drafts[0]["unmapped_fields"]["first_mes"], "Hello")
         warning_text = " ".join(drafts[0]["warnings"])
         for field in ("first_mes", "alternate_greetings", "character_worldbook"):
             self.assertIn(field, warning_text)

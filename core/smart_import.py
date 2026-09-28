@@ -140,11 +140,13 @@ def normalize_smart_import(result):
         kind, source_fields = _validate_item(item)
         warnings = list(dict.fromkeys(item["warnings"]))
         fields = {}
+        unmapped_fields = {}
         if kind in {"npc", "player"}:
             allowed = {"name", "description", "summary", "personality", "scenario", "memories", "mes_example", "speech_habits", "relationship_notes", "state_fields", "affinity", "clothing_type", "clothing_state", "categories"}
             fields = {key: value for key, value in source_fields.items() if key in allowed}
             unmapped = [key for key in source_fields if key in {"first_mes", "alternate_greetings", "character_worldbook"}]
             for key in unmapped:
+                unmapped_fields[key] = source_fields[key]
                 warnings.append(f"字段 {key} 暂无对应的本地角色卡字段，原内容保留在草稿中供确认。")
             for key in source_fields:
                 if key not in allowed and key not in {"first_mes", "alternate_greetings", "character_worldbook"}:
@@ -204,6 +206,8 @@ def normalize_smart_import(result):
         draft = {"id": index, "type": kind, "fields": fields, "source_excerpt": item["source_excerpt"], "confidence": float(item["confidence"]), "warnings": warnings}
         if kind in {"npc", "player"}:
             draft["bundle_id"] = package_id
+        if unmapped_fields:
+            draft["unmapped_fields"] = unmapped_fields
         drafts.append(draft)
     for index, item, source_fields, warnings in pending_books:
         book_name = source_fields["name"].strip()

@@ -22,6 +22,8 @@ curl -fsSL "https://raw.githubusercontent.com/wspbkq666/neon-tavern-user/8daac40
 
 bootstrap 通过 Git 检出固定 commit，不下载压缩包或远程打包文件。随后安装器会先只读检查系统、DNS、监听端口、Web 服务、Nginx 域名、systemd 单元和目标目录，再显示变更摘要。只有输入“安装”后才会安装 apt 依赖、写入本站文件或操作本站服务。
 
+安装器会一并安装 `antiword`，用于服务器端读取 DOC 文件；DOCX 读取依赖随 Python requirements 安装。智能导入需要用户登录后在模型设置中配置有效的模型服务和 API 密钥。
+
 ## 安装时会询问
 
 1. 本站公网域名、站点显示名称、证书续期邮箱。

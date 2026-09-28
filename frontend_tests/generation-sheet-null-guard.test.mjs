@@ -12,5 +12,5 @@ test('generation sheet supports the legacy sheet class and guards missing DOM no
 });
 
 test('generation script URL is versioned so mobile browsers do not keep the broken cached bundle', () => {
-  assert.match(html, /prototype-app\.js'\s*%}\?v=20260923-adult-preference/);
+  assert.match(html, /prototype-app\.js'\s*%}\?v=20260928-smart-import/);
 });
