@@ -14,6 +14,8 @@ from docx.text.paragraph import Paragraph
 
 MAX_SOURCE_BYTES = 5 * 1024 * 1024
 MAX_TEXT_CHARS = 100_000
+MAX_DOCX_UNCOMPRESSED_BYTES = 25 * 1024 * 1024
+MAX_DOCX_ZIP_MEMBERS = 5000
 ANTIWORD_TIMEOUT_SECONDS = 15
 ALLOWED_EXTENSIONS = {".txt", ".md", ".docx", ".doc"}
 
@@ -65,6 +67,10 @@ def _read_upload(upload) -> tuple[str, bytes]:
 
 def _extract_docx(raw: bytes) -> tuple[str, list[str]]:
     try:
+        with zipfile.ZipFile(BytesIO(raw)) as package:
+            members = package.infolist()
+            if len(members) > MAX_DOCX_ZIP_MEMBERS or sum(item.file_size for item in members) > MAX_DOCX_UNCOMPRESSED_BYTES:
+                raise SmartImportInputError("DOCX 解压内容过大，已拒绝读取")
         document = Document(BytesIO(raw))
         blocks = []
         for child in document.element.body.iterchildren():
@@ -78,6 +84,8 @@ def _extract_docx(raw: bytes) -> tuple[str, list[str]]:
                     cells = [cell.text.replace("\n", " / ").strip() for cell in row.cells]
                     if any(cells):
                         blocks.append(" | ".join(cells))
+    except SmartImportInputError:
+        raise
     except (PackageNotFoundError, zipfile.BadZipFile, OSError, ValueError, KeyError) as exc:
         raise SmartImportInputError("DOCX 文件损坏或格式无法读取") from exc
     warnings = []

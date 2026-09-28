@@ -217,7 +217,7 @@ def normalize_smart_import(result):
         category_id = f"smart-import-{index}-entries"
         normalized_entries = []
         for entry_index, entry in enumerate(source_fields["entries"]):
-            if not isinstance(entry, dict) or not isinstance(entry.get("name"), str) or not entry["name"].strip() or not isinstance(entry.get("content", ""), str):
+            if not isinstance(entry, dict) or not isinstance(entry.get("name"), str) or not entry["name"].strip() or len(entry["name"].strip()) > 160 or not isinstance(entry.get("content", ""), str) or len(entry.get("content", "")) > 200000:
                 raise ValueError("世界书条目缺少名称或正文格式无效")
             keywords = _string_list(entry.get("keywords", []), "世界书关键词", max_items=200, max_length=200)
             refs = _string_list(entry.get("scoped_characters", []), "世界书角色范围", max_items=100, max_length=120)
@@ -230,7 +230,7 @@ def normalize_smart_import(result):
                     warnings.append(f"世界书条目“{entry['name']}”的角色范围“{ref}”无法唯一匹配，导入时将设为全局。")
             normalized_entries.append({
                 "id": f"entry-{index}-{entry_index}", "name": entry["name"].strip()[:160],
-                "content": entry.get("content", "")[:200000], "enabled": True,
+                "content": entry.get("content", ""), "enabled": True,
                 "trigger_mode": "keyword" if keywords else "always", "keywords": keywords,
                 "insertion_position": "before_character", "priority": entry_index,
                 "scope_type": "character" if scope_ids else "global", "category_ids": [category_id],

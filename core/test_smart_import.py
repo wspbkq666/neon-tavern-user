@@ -83,3 +83,9 @@ class SmartImportNormalizationTests(SimpleTestCase):
             result = {"items": [{"type": "npc", "fields": fields, "source_excerpt": "Lin", "confidence": 1, "warnings": []}]}
             with self.subTest(extra=extra), self.assertRaises(ValueError):
                 normalize_smart_import(result)
+
+    def test_worldbook_entry_limits_reject_instead_of_truncating_content(self):
+        for entry in ({"name": "x" * 161, "content": "ok"}, {"name": "entry", "content": "x" * 200001}):
+            result = {"items": [{"type": "worldbook", "fields": {"name": "Book", "entries": [entry]}, "source_excerpt": "Book", "confidence": 1, "warnings": []}]}
+            with self.subTest(lengths=(len(entry["name"]), len(entry["content"]))), self.assertRaises(ValueError):
+                normalize_smart_import(result)

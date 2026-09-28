@@ -1,6 +1,7 @@
 from io import BytesIO
 import subprocess
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase
@@ -96,6 +97,14 @@ class SmartImportExtractionTests(SimpleTestCase):
 
         with self.assertRaises(SmartImportInputError):
             extract_document(upload=upload)
+
+    def test_docx_uncompressed_size_is_bounded_before_document_parser_runs(self):
+        archive = MagicMock()
+        archive.__enter__.return_value.infolist.return_value = [SimpleNamespace(file_size=26 * 1024 * 1024)]
+        with patch("core.smart_import_extract.zipfile.ZipFile", return_value=archive), patch("core.smart_import_extract.Document") as document:
+            with self.assertRaises(SmartImportInputError):
+                extract_document(upload=SimpleUploadedFile("large.docx", b"zip"))
+        document.assert_not_called()
 
     def test_empty_document_is_rejected(self):
         with self.assertRaises(SmartImportInputError):
