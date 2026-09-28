@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.urls import path
 
-from core import auth_api, bundle_api, character_api, conversation_api, generation_api, market_admin_api, market_api, profile_api, settings_api, worldbook_api
+from core import auth_api, bundle_api, character_api, conversation_api, generation_api, market_admin_api, market_api, profile_api, settings_api, smart_import_api, worldbook_api
 from core import admin_api
 from core import views
 from core import disaster_recovery_api, disaster_recovery_transfer
@@ -42,6 +42,7 @@ urlpatterns = [
     path("api/bundles/export/", bundle_api.export_bundle_api),
     path("api/bundles/import/preview/", bundle_api.import_preview),
     path("api/bundles/import/commit/", bundle_api.import_commit),
+    path("api/smart-import/preview/", smart_import_api.preview),
     path("api/market/listings/", market_api.listings),
     path("api/market/listings/<uuid:listing_id>/", market_api.listing_detail),
     path("api/market/listings/<uuid:listing_id>/download/", market_api.download_listing),
