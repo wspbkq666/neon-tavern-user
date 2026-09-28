@@ -51,4 +51,3 @@ test('the form supports failed request recovery and displays Chinese warnings', 
   assert.match(script, /finally/);
   assert.match(script, /smartImportText/);
 });
-

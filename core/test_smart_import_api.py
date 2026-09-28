@@ -116,4 +116,3 @@ class SmartImportApiTests(TestCase):
             response = self.client.post(self.url, data=json.dumps({"text": "x" * 100001}), content_type="application/json")
         self.assertEqual(response.status_code, 400)
         model.assert_not_called()
-
