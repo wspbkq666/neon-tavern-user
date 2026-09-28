@@ -47,20 +47,33 @@ def preview(request):
 
     try:
         drafts, payload = normalize_smart_import(result)
-        bundle_preview = parse_bundle(payload, request.user)
+        if payload["characters"] or payload["worldbooks"]:
+            bundle_preview = parse_bundle(payload, request.user)
+            bundle_preview_data = bundle_preview.as_dict()
+            bundle_warnings = bundle_preview.warnings
+        else:
+            bundle_preview_data = {
+                "format": payload["format"],
+                "version": payload["version"],
+                "characters": [],
+                "worldbooks": [],
+                "counts": {"characters": 0, "worldbooks": 0, "worldbook_categories": 0, "worldbook_entries": 0},
+                "warnings": [],
+            }
+            bundle_warnings = []
     except (ImportValidationError, ValueError, TypeError, RecursionError):
         return JsonResponse({"error": "AI 整理结果未通过导入校验，请检查内容后重试"}, status=400)
 
     warnings = list(dict.fromkeys([
         *extracted.warnings,
         *(warning for draft in drafts for warning in draft["warnings"]),
-        *bundle_preview.warnings,
+        *bundle_warnings,
     ]))
     return JsonResponse(
         {
             "drafts": drafts,
             "payload": payload,
-            "bundle_preview": bundle_preview.as_dict(),
+            "bundle_preview": bundle_preview_data,
             "warnings": warnings,
         },
         json_dumps_params={"ensure_ascii": False},

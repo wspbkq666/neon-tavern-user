@@ -80,7 +80,8 @@ def analyze_document(text, *, options, api_key):
         for item in _model_items(result):
             name = item["fields"].get("name", "")
             excerpt = " ".join(item["source_excerpt"].split()).casefold()
-            signature = (item["type"], str(name).strip().casefold(), excerpt)
+            fields_signature = json.dumps(item["fields"], ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            signature = (item["type"], str(name).strip().casefold(), excerpt, fields_signature)
             if signature not in collected:
                 collected[signature] = item
             if len(collected) > MAX_ITEMS:
@@ -151,7 +152,7 @@ def normalize_smart_import(result):
             name = source_fields["name"].strip()
             for field_name in ("description", "summary", "personality", "scenario", "memories", "mes_example", "speech_habits", "clothing_type", "clothing_state"):
                 value = source_fields.get(field_name)
-                maximum = 200 if field_name in {"description", "summary", "clothing_type", "clothing_state"} else 10000
+                maximum = 200 if field_name in {"description", "summary", "clothing_type", "clothing_state"} else 5000 if field_name in {"mes_example", "speech_habits"} else 10000
                 if value is not None and (not isinstance(value, str) or len(value) > maximum):
                     raise ValueError(f"角色字段 {field_name} 格式无效")
             for field_name in ("relationship_notes", "state_fields"):
@@ -162,7 +163,7 @@ def normalize_smart_import(result):
             if not isinstance(affinity, int) or isinstance(affinity, bool) or not 0 <= affinity <= 100:
                 raise ValueError("角色好感度必须为 0 到 100 的整数")
             categories = source_fields.get("categories", [])
-            if not isinstance(categories, list) or len(categories) > 100 or any(not isinstance(value, str) or len(value) > 500 for value in categories):
+            if not isinstance(categories, list) or len(categories) > 100 or any(not isinstance(value, str) or len(value) > 500 or any(len(part) > 120 for part in value.split("/")) for value in categories):
                 raise ValueError("角色分类格式无效")
             package_id = uuid.uuid4().hex
             character_ids.setdefault(name.casefold(), []).append(package_id)
@@ -200,7 +201,10 @@ def normalize_smart_import(result):
         else:
             warnings.append("无法可靠判断内容类型，默认不加入导入负载。")
             fields = {key: value for key, value in source_fields.items() if key in CHARACTER_FIELDS or key in {"entries", "description"}}
-        drafts.append({"id": index, "type": kind, "fields": fields, "source_excerpt": item["source_excerpt"], "confidence": float(item["confidence"]), "warnings": warnings})
+        draft = {"id": index, "type": kind, "fields": fields, "source_excerpt": item["source_excerpt"], "confidence": float(item["confidence"]), "warnings": warnings}
+        if kind in {"npc", "player"}:
+            draft["bundle_id"] = package_id
+        drafts.append(draft)
     for index, item, source_fields, warnings in pending_books:
         book_name = source_fields["name"].strip()
         description = source_fields.get("description", "")
@@ -235,5 +239,7 @@ def normalize_smart_import(result):
             "categories": [{"id": category_id, "name": "AI 导入条目", "parent_id": None, "position": 0}],
             "entries": normalized_entries,
         }
-        worldbooks.append({"package_id": uuid.uuid4().hex, "payload": payload})
+        package_id = uuid.uuid4().hex
+        worldbooks.append({"package_id": package_id, "payload": payload})
+        next(draft for draft in drafts if draft["id"] == index)["bundle_id"] = package_id
     return drafts, {"format": BUNDLE_FORMAT, "version": BUNDLE_VERSION, "characters": characters, "worldbooks": worldbooks}

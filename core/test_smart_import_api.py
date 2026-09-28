@@ -79,6 +79,15 @@ class SmartImportApiTests(TestCase):
         self.assertIn("# Lin", messages[1]["content"])
         self.assertIn("A doctor", messages[1]["content"])
 
+    @patch("core.smart_import_api.active_api_key", return_value="server-secret")
+    @patch("core.smart_import_api.effective_values", return_value={"model": "unit-model"})
+    @patch("core.smart_import.call_json_model", return_value={"items": [{"type": "unknown", "fields": {}, "source_excerpt": "uncertain", "confidence": 0.3, "warnings": []}]})
+    def test_uncertain_item_is_returned_for_user_classification(self, model, settings, active_key):
+        response = self.client.post(self.url, data=json.dumps({"text": "uncertain"}), content_type="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["drafts"][0]["type"], "unknown")
+        self.assertEqual(response.json()["bundle_preview"]["counts"]["characters"], 0)
+
     @patch("core.smart_import_api.active_api_key", return_value="secret")
     @patch("core.smart_import_api.effective_values", return_value={"model": "fake"})
     @patch("core.smart_import.call_json_model", side_effect=RuntimeError("provider detail and secret"))
