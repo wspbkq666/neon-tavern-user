@@ -8,6 +8,10 @@ NEON_TAVERN_INSTALLER_TEST=1 source "$ROOT/deployment/install.sh"
 
 fail() { printf '失败：%s\n' "$*" >&2; exit 1; }
 
+system_packages_output="$(system_packages)"
+[[ " $system_packages_output " == *antiword* ]] || fail '系统依赖未包含 antiword'
+
+
 LOG_FILE="$TEMP_ROOT/install.log"
 PAIRING_154='PAIRING-SECRET-154-ONLY-1234567890'
 PAIRING_123='PAIRING-SECRET-123-ONLY-ABCDEFGHIJ'

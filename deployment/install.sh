@@ -17,6 +17,9 @@ INSTALLER_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=deployment/lib/upgrade.sh
 . "$INSTALLER_DIR/lib/upgrade.sh"
 
+system_packages() {
+  printf '%s\n' git openssl nginx certbot python3 python3-venv antiword build-essential libffi-dev libjpeg-dev zlib1g-dev
+}
 main() {
   local config_root="${NEON_CONFIG_ROOT:-/etc/neon-tavern-user}"
   local repo_url="${NEON_TAVERN_USER_REPO_URL:-}" release_sha="${NEON_TAVERN_RELEASE_SHA:-}"
@@ -75,8 +78,9 @@ main() {
 
   export DEBIAN_FRONTEND=noninteractive
   apt-get update || { log_error 'apt 软件索引更新失败'; return 3; }
-  apt-get install --yes --no-upgrade git openssl nginx certbot python3 python3-venv \
-    build-essential libffi-dev libjpeg-dev zlib1g-dev || {
+  local -a packages=()
+  mapfile -t packages < <(system_packages)
+  apt-get install --yes --no-upgrade "${packages[@]}" || {
       log_error '安装系统依赖失败；请查看 apt 输出后重试'; return 3;
     }
 
