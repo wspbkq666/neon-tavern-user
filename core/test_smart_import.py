@@ -39,6 +39,17 @@ class SmartImportNormalizationTests(SimpleTestCase):
         drafts, _ = normalize_smart_import(result)
         self.assertEqual(drafts[0]["unmapped_fields"]["custom_rule"], "keep me")
 
+    def test_all_imported_character_fields_are_in_draft_and_alias_conflicts_are_retained(self):
+        source = {"name": "A", "description": "old summary", "summary": "chosen summary", "relationship_notes": {"player": "friend"}, "state_fields": {"mood": "calm"}, "affinity": 42, "clothing_type": "coat", "clothing_state": "wet", "categories": ["Fantasy/Guard"]}
+        drafts, payload = normalize_smart_import({"items": [{"type": "npc", "fields": source, "source_excerpt": "A", "confidence": 0.9, "warnings": []}]})
+        fields = drafts[0]["fields"]
+        for key in ("relationship_notes", "state_fields", "affinity", "clothing_type", "clothing_state", "categories"):
+            self.assertEqual(fields[key], source[key])
+        self.assertEqual(fields["summary"], "chosen summary")
+        self.assertEqual(drafts[0]["unmapped_fields"]["description"], "old summary")
+        self.assertTrue(any("内容冲突" in warning for warning in drafts[0]["warnings"]))
+        self.assertEqual(payload["characters"][0]["summary"], "chosen summary")
+
     def test_invalid_items_unknown_type_and_non_dict_fields_are_rejected(self):
         invalid = [{}, {"items": [{"type": "mystery", "fields": {}, "source_excerpt": "", "confidence": 0.2, "warnings": []}]}, {"items": [{"type": "npc", "fields": [], "source_excerpt": "", "confidence": 0.2, "warnings": []}]}]
         for result in invalid:

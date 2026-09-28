@@ -30,6 +30,12 @@ test('drafts can change category and be skipped before final import', async () =
   assert.match(script, /data-smart-import-skip/);
   assert.match(script, /smartImportBuildPayload/);
   assert.match(script, /draft\.unmapped_fields/);
+  assert.match(script, /relationship_notes/);
+  assert.match(script, /state_fields/);
+  assert.match(script, /clothing_type/);
+  assert.match(script, /categories: '角色分类（JSON 数组）'/);
+  assert.match(script, /好感度（0–100）/);
+  assert.match(script, /data-smart-import-field="affinity"/);
 });
 
 test('preview stages the model result and bundle validation before explicit commit', async () => {
@@ -62,4 +68,14 @@ test('source edits invalidate pending model responses even before drafts exist',
   assert.ok(handler);
   assert.match(handler[1], /smartImportInvalidatePreview\(\)/);
   assert.doesNotMatch(handler[1], /if\s*\(!smartImportState\.drafts\.length\)/);
+});
+
+test('invalid JSON in any active draft blocks bundle validation before type-specific conversion', async () => {
+  const script = await read('frontend_dist/assets/prototype-app.js');
+  const builder = script.match(/function smartImportBuildPayload\(\) \{([\s\S]*?)\n\}/);
+  assert.ok(builder);
+  const skip = builder[1].indexOf('if (draft.skipped) continue;');
+  const editError = builder[1].indexOf('draft.editErrors');
+  const characterFilter = builder[1].indexOf("if (!['npc', 'player'].includes(draft.type)) continue;");
+  assert.ok(skip >= 0 && editError > skip && characterFilter > editError);
 });

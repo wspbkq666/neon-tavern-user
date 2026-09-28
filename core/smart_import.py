@@ -148,6 +148,11 @@ def normalize_smart_import(result):
             for key in unmapped:
                 unmapped_fields[key] = source_fields[key]
                 warnings.append(f"字段 {key} 暂无对应的本地角色卡字段，原内容保留在草稿中供确认。")
+            alias_pairs = (("summary", "description"), ("memories", "scenario"), ("speech_habits", "mes_example"))
+            for primary, alias in alias_pairs:
+                if primary in source_fields and alias in source_fields and source_fields[primary] != source_fields[alias]:
+                    unmapped_fields[alias] = source_fields[alias]
+                    warnings.append("角色字段别名内容冲突；已采用主字段，另一值保留待确认。")
             for key in source_fields:
                 if key not in allowed and key not in {"first_mes", "alternate_greetings", "character_worldbook"}:
                     unmapped_fields[key] = source_fields[key]
@@ -184,6 +189,13 @@ def normalize_smart_import(result):
                 "is_player_controlled": kind == "player", "categories": categories,
             }
             fields = {**fields, "name": name, "is_player_controlled": kind == "player"}
+            fields.update({
+                "summary": row["summary"], "personality": row["personality"],
+                "speech_habits": row["speech_habits"], "memories": row["memories"],
+                "relationship_notes": row["relationship_notes"], "state_fields": row["state_fields"],
+                "affinity": row["affinity"], "clothing_type": row["clothing_type"],
+                "clothing_state": row["clothing_state"], "categories": row["categories"],
+            })
             if "description" in source_fields or "summary" in source_fields:
                 fields["summary"] = row["summary"]
             if "scenario" in source_fields or "memories" in source_fields:

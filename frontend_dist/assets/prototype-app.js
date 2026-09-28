@@ -43,7 +43,7 @@ function smartImportRenderDrafts() {
     const fields = draft.fields || {};
     const typeOptions = [['npc', 'NPC 角色卡'], ['player', '玩家卡'], ['worldbook', '世界书'], ['unknown', '待确认']];
     const common = `<label style="display:block;margin:8px 0;font-size:11px">名称或标题<input data-smart-import-field="name" data-index="${index}" value="${h(fields.name || '')}" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px"></label>`;
-    const characterFields = ['summary', 'personality', 'speech_habits', 'memories'].map(key => `<label style="display:block;margin:8px 0;font-size:11px">${({ summary: '摘要', personality: '性格', speech_habits: '说话习惯', memories: '背景与记忆' })[key]}<textarea data-smart-import-field="${key}" data-index="${index}" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px">${h(fields[key] || '')}</textarea></label>`).join('');
+    const characterFields = ['summary', 'personality', 'speech_habits', 'memories', 'clothing_type', 'clothing_state'].map(key => `<label style="display:block;margin:8px 0;font-size:11px">${({ summary: '摘要', personality: '性格', speech_habits: '说话习惯', memories: '背景与记忆', clothing_type: '衣着类型', clothing_state: '衣着状态' })[key]}<textarea data-smart-import-field="${key}" data-index="${index}" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px">${h(fields[key] || '')}</textarea></label>`).join('') + `<label style="display:block;margin:8px 0;font-size:11px">好感度（0–100）<input data-smart-import-field="affinity" data-index="${index}" type="number" min="0" max="100" step="1" value="${h(fields.affinity ?? 0)}" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px"></label>` + ['relationship_notes', 'state_fields', 'categories'].map(key => `<label style="display:block;margin:8px 0;font-size:11px">${({ relationship_notes: '关系备注（JSON）', state_fields: '状态字段（JSON）', categories: '角色分类（JSON 数组）' })[key]}<textarea data-smart-import-field="${key}" data-index="${index}" rows="3" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px;font:11px monospace">${h(JSON.stringify(fields[key] ?? (key === 'categories' ? [] : {}), null, 2))}</textarea></label>`).join('');
     const worldbookFields = `<label style="display:block;margin:8px 0;font-size:11px">世界书简介<textarea data-smart-import-field="description" data-index="${index}" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px">${h(fields.description || '')}</textarea></label><label style="display:block;margin:8px 0;font-size:11px">条目（JSON，可编辑）<textarea data-smart-import-field="entries" data-index="${index}" rows="5" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px;font:11px monospace">${h(JSON.stringify(fields.entries || [], null, 2))}</textarea></label>`;
     const unmapped = draft.unmapped_fields && Object.keys(draft.unmapped_fields).length ? `<details style="margin:8px 0"><summary style="font-size:11px;color:#a76b32">查看暂不能导入的字段</summary><pre style="white-space:pre-wrap;font-size:10px">${h(JSON.stringify(draft.unmapped_fields, null, 2))}</pre></details>` : '';
     return `<article class="card" data-smart-import-card="${index}"><div style="display:flex;align-items:center;gap:8px"><b style="flex:1">草稿 ${index + 1}</b><select data-smart-import-type data-index="${index}" aria-label="草稿类型">${typeOptions.map(([value, label]) => `<option value="${value}"${draft.type === value ? ' selected' : ''}>${label}</option>`).join('')}</select></div><div style="margin-top:6px;color:#8ca0aa;font-size:10px">识别置信度 ${Math.round((draft.confidence || 0) * 100)}%</div>${common}${draft.type === 'worldbook' ? worldbookFields : draft.type === 'unknown' ? `<div style="font-size:10px;color:#758d98">请先选择类别，再编辑对应字段。</div>` : characterFields}${unmapped}<details style="margin:8px 0"><summary style="font-size:11px;color:#648392">查看原文片段</summary><p style="white-space:pre-wrap;font-size:11px">${h(draft.source_excerpt || '')}</p></details>${(draft.warnings || []).length ? `<div class="bundle-warning">${draft.warnings.map(h).join('<br>')}</div>` : ''}<label style="display:block;margin-top:10px;font-size:11px"><input type="checkbox" data-smart-import-skip data-index="${index}"${draft.skipped ? ' checked' : ''}> 跳过此草稿</label></article>`;
@@ -53,14 +53,18 @@ function smartImportBuildPayload() {
   const payload = { format: 'neon-tavern-bundle', version: 1, characters: [], worldbooks: [] };
   const characterIds = new Map();
   for (const draft of smartImportState.drafts) {
-    if (draft.skipped || !['npc', 'player'].includes(draft.type)) continue;
+    if (draft.skipped) continue;
+    if (Object.keys(draft.editErrors || {}).length) throw new Error('请先修正草稿中标出的 JSON 或数字格式问题');
+    if (!['npc', 'player'].includes(draft.type)) continue;
     const fields = draft.fields || {};
     const name = String(fields.name || '').trim();
     if (!name || name.length > 60) throw new Error('角色卡名称需填写且不能超过 60 个字符');
     const packageId = draft.bundle_id || smartImportNewId();
     draft.bundle_id = packageId;
     characterIds.set(name.toLocaleLowerCase(), [...(characterIds.get(name.toLocaleLowerCase()) || []), packageId]);
-    payload.characters.push({ package_id: packageId, name, summary: smartImportTextValue(fields.summary, 200, '角色摘要'), personality: smartImportTextValue(fields.personality, 10000, '性格'), speech_habits: smartImportTextValue(fields.speech_habits, 5000, '说话习惯'), memories: smartImportTextValue(fields.memories, 10000, '角色背景'), relationship_notes: fields.relationship_notes || {}, state_fields: fields.state_fields || {}, affinity: Number.isInteger(fields.affinity) ? fields.affinity : 0, clothing_type: smartImportTextValue(fields.clothing_type, 200, '衣着类型'), clothing_state: smartImportTextValue(fields.clothing_state, 200, '衣着状态'), is_player_controlled: draft.type === 'player', categories: Array.isArray(fields.categories) ? fields.categories : [] });
+    if (!Number.isInteger(fields.affinity) || fields.affinity < 0 || fields.affinity > 100) throw new Error('角色好感度需为 0 到 100 的整数');
+    if (!fields.relationship_notes || Array.isArray(fields.relationship_notes) || typeof fields.relationship_notes !== 'object' || !fields.state_fields || Array.isArray(fields.state_fields) || typeof fields.state_fields !== 'object' || !Array.isArray(fields.categories)) throw new Error('角色关系、状态和分类字段格式无效');
+    payload.characters.push({ package_id: packageId, name, summary: smartImportTextValue(fields.summary, 200, '角色摘要'), personality: smartImportTextValue(fields.personality, 10000, '性格'), speech_habits: smartImportTextValue(fields.speech_habits, 5000, '说话习惯'), memories: smartImportTextValue(fields.memories, 10000, '角色背景'), relationship_notes: fields.relationship_notes, state_fields: fields.state_fields, affinity: fields.affinity, clothing_type: smartImportTextValue(fields.clothing_type, 200, '衣着类型'), clothing_state: smartImportTextValue(fields.clothing_state, 200, '衣着状态'), is_player_controlled: draft.type === 'player', categories: fields.categories });
   }
   for (const draft of smartImportState.drafts) {
     if (draft.skipped || draft.type !== 'worldbook') continue;
@@ -89,9 +93,17 @@ function smartImportBuildPayload() {
 function smartImportEdit(index, key, value) {
   const draft = smartImportState.drafts[index];
   if (!draft) return;
-  if (key === 'entries') {
-    try { draft.fields.entries = JSON.parse(value); }
-    catch { $('#smartImportStatus').textContent = '世界书条目 JSON 格式无效，请检查后重试。'; smartImportInvalidatePreview(); return; }
+  if (['entries', 'relationship_notes', 'state_fields', 'categories'].includes(key)) {
+    let parsed;
+    try { parsed = JSON.parse(value); }
+    catch { draft.editErrors = { ...(draft.editErrors || {}), [key]: true }; $('#smartImportStatus').textContent = `${({ entries: '世界书条目', relationship_notes: '关系备注', state_fields: '状态字段', categories: '角色分类' })[key]} JSON 格式无效，请检查后重试。`; smartImportInvalidatePreview(); return; }
+    draft.fields[key] = parsed;
+    if (draft.editErrors) delete draft.editErrors[key];
+  } else if (key === 'affinity') {
+    const numeric = Number(value);
+    if (!/^\d+$/.test(value) || numeric > 100) { draft.editErrors = { ...(draft.editErrors || {}), [key]: true }; $('#smartImportStatus').textContent = '好感度需填写 0 到 100 的整数。'; smartImportInvalidatePreview(); return; }
+    draft.fields[key] = numeric;
+    if (draft.editErrors) delete draft.editErrors[key];
   } else draft.fields[key] = value;
   $('#smartImportStatus').textContent = '';
   smartImportInvalidatePreview();
@@ -109,7 +121,13 @@ $('#smartImportDrafts').addEventListener('change', event => {
     if (!draft) return;
     draft.type = type.value;
     if (draft.type === 'worldbook' && !Array.isArray(draft.fields.entries)) draft.fields.entries = [{ name: '新条目', content: draft.source_excerpt || '', keywords: [] }];
-    if (['npc', 'player'].includes(draft.type) && !draft.fields.name) draft.fields.name = '';
+    if (['npc', 'player'].includes(draft.type)) {
+      if (!draft.fields.name) draft.fields.name = '';
+      draft.fields.relationship_notes ||= {};
+      draft.fields.state_fields ||= {};
+      draft.fields.categories ||= [];
+      draft.fields.affinity ??= 0;
+    }
     smartImportRenderDrafts(); smartImportInvalidatePreview();
   } else if (skipped) {
     smartImportState.drafts[Number(skipped.dataset.index)].skipped = skipped.checked;
