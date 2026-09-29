@@ -43,6 +43,7 @@ urlpatterns = [
     path("api/bundles/import/preview/", bundle_api.import_preview),
     path("api/bundles/import/commit/", bundle_api.import_commit),
     path("api/smart-import/preview/", smart_import_api.preview),
+    path("api/smart-import/preview/stream/", smart_import_api.preview_stream),
     path("api/market/listings/", market_api.listings),
     path("api/market/listings/<uuid:listing_id>/", market_api.listing_detail),
     path("api/market/listings/<uuid:listing_id>/download/", market_api.download_listing),

@@ -43,6 +43,38 @@ export async function api(path, options = {}) {
   return data;
 }
 
+export async function apiStream(path, options = {}) {
+  const { method = 'POST', body, redirectOnUnauthorized = true } = options;
+  const headers = { Accept: 'text/event-stream' };
+  if (method !== 'GET') headers['X-CSRFToken'] = csrfToken();
+  if (body !== undefined && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  let response;
+  try {
+    response = await fetch(path, {
+      method,
+      headers,
+      credentials: 'same-origin',
+      cache: 'no-store',
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+    });
+  } catch {
+    throw new Error('无法连接服务器，请检查网络后重试');
+  }
+  if (response.status === 401 && redirectOnUnauthorized) {
+    window.location.href = '/login/';
+    throw new Error('登录已过期');
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const detail = data.error || data.detail || data.message;
+    throw new Error(typeof detail === 'string' ? detail : `请求失败（${response.status}）`);
+  }
+  if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
+    throw new Error('服务器未开启实时识别日志');
+  }
+  return response;
+}
+
 export function listFrom(data, key) {
   if (Array.isArray(data)) return data;
   return Array.isArray(data?.[key]) ? data[key] : Array.isArray(data?.results) ? data.results : [];

@@ -125,6 +125,12 @@ class SmartImportExtractionTests(SimpleTestCase):
         with self.assertRaises(SmartImportInputError):
             extract_document(upload=upload)
 
+    def test_word_temporary_lock_file_has_a_clear_error(self):
+        upload = SimpleUploadedFile("~$穿书设定.docx", b"temporary lock")
+
+        with self.assertRaisesRegex(SmartImportInputError, "临时锁文件"):
+            extract_document(upload=upload)
+
     def test_docx_uncompressed_size_is_bounded_before_document_parser_runs(self):
         archive = MagicMock()
         archive.__enter__.return_value.infolist.return_value = [SimpleNamespace(file_size=26 * 1024 * 1024)]

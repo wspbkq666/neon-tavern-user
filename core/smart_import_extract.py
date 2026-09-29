@@ -52,6 +52,8 @@ def _read_upload(upload) -> tuple[str, bytes]:
         raise SmartImportInputError("仅支持 TXT、MD、DOCX 和 DOC 文件")
     if not filename or len(filename) > 255:
         raise SmartImportInputError("文件名无效")
+    if extension in {".doc", ".docx"} and filename.startswith("~$"):
+        raise SmartImportInputError("这是 Word 临时锁文件，请忽略它并选择原始文档")
     size = getattr(upload, "size", None)
     if isinstance(size, int) and size > MAX_SOURCE_BYTES:
         raise SmartImportInputError("上传文件不能超过 5 MiB")

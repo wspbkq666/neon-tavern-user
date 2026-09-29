@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .auth_api import body_or_error
 from .character_api import authentication_error
+from .ai_text_filter import sanitize_ai_value
 from .generation import call_json_model
 from .models import Conversation, GenerationJob, Message
 from .settings_api import active_api_key, effective_values
@@ -159,7 +160,7 @@ def suggest(request, conversation_id):
         try:
             result = call_json_model(
                 [{"role": "system", "content": "你是 Router Agent。根据最近对话、当前场景和在场角色，按实际行动先后生成 NPC 行动队列。仅返回 JSON 对象，格式 {\"action_queue\":[\"角色ID\"],\"director_hints\":{\"角色ID\":\"一句提示\"}}。不要选择玩家角色。"},
-                 {"role": "user", "content": json.dumps({"npcs": [{"id": str(npc.id), "name": npc.name, "summary": npc.summary, "personality": npc.personality, "state": npc.state_fields} for npc in npcs], "recent": [{"speaker": item.speaker.name if item.speaker else "场景", "kind": item.kind, "content": item.content} for item in reversed(latest)], "environment": conversation.environment}, ensure_ascii=False)}],
+                 {"role": "user", "content": json.dumps(sanitize_ai_value({"npcs": [{"id": str(npc.id), "name": npc.name, "summary": npc.summary, "personality": npc.personality, "state": npc.state_fields} for npc in npcs], "recent": [{"speaker": item.speaker.name if item.speaker else "场景", "kind": item.kind, "content": item.content} for item in reversed(latest)], "environment": conversation.environment})[0], ensure_ascii=False)}],
                 options, key, max_tokens=400,
             )
             selected = [actor_id for actor_id in result.get("action_queue", result.get("should_reply", [])) if actor_id in scores]

@@ -2,7 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
@@ -363,8 +363,12 @@ class WorldbookCategory(models.Model):
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        self.children.update(parent=self.parent)
-        return super().delete(*args, **kwargs)
+        with transaction.atomic():
+            if self.parent_id:
+                for entry in self.entries.all():
+                    entry.categories.add(self.parent_id)
+            self.children.update(parent_id=self.parent_id)
+            return super().delete(*args, **kwargs)
 
     class Meta:
         ordering = ["position", "created_at", "id"]

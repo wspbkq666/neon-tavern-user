@@ -8,9 +8,18 @@ import httpx
 from django.db import transaction
 from django.utils import timezone
 
+from .ai_text_filter import sanitize_ai_value
 from .models import Character, Conversation, GenerationJob, Message, UserProfile, WorldbookEntry
 from .settings_api import active_api_key, effective_values
 from .worldbook_resolver import resolve_worldbook_entries
+
+
+class ModelResponseTruncated(ValueError):
+    """模型在 JSON 完整返回前停止。"""
+
+
+class ModelResponseInvalidJSON(ValueError):
+    """模型返回内容无法解析为 JSON。"""
 
 
 def _stream_json_field(raw, field):
@@ -69,7 +78,7 @@ def _phase_messages(messages, phase, *, thought="", public_text=""):
     ]
 
 
-def call_json_model(messages, options, key, *, max_tokens=None, on_chunk=None, on_raw_chunk=None, timings=None):
+def call_json_model(messages, options, key, *, max_tokens=None, on_chunk=None, on_raw_chunk=None, timings=None, force_stream=False):
     request_started_at = time.monotonic()
     payload = {
         "model": options["model"],
@@ -78,7 +87,7 @@ def call_json_model(messages, options, key, *, max_tokens=None, on_chunk=None, o
         "top_p": options["top_p"],
         "max_tokens": max_tokens or options["max_tokens"],
         "response_format": {"type": "json_object"},
-        "stream": (on_chunk is not None or on_raw_chunk is not None) and options.get("stream_output", False),
+        "stream": force_stream or (on_chunk is not None or on_raw_chunk is not None) and options.get("stream_output", False),
     }
     try:
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
@@ -88,6 +97,7 @@ def call_json_model(messages, options, key, *, max_tokens=None, on_chunk=None, o
             chunks = []
             length = 0
             last_update = 0.0
+            finish_reason = None
             with httpx.stream("POST", api_url, headers=headers, json=payload, timeout=timeout) as response:
                 if timings is not None:
                     timings["headers_ms"] = round((time.monotonic() - request_started_at) * 1000)
@@ -96,7 +106,10 @@ def call_json_model(messages, options, key, *, max_tokens=None, on_chunk=None, o
                     if not line.startswith("data: ") or line == "data: [DONE]":
                         continue
                     try:
-                        delta = json.loads(line[6:])["choices"][0]["delta"].get("content", "")
+                        choice = json.loads(line[6:])["choices"][0]
+                        delta = choice["delta"].get("content", "")
+                        if choice.get("finish_reason"):
+                            finish_reason = choice["finish_reason"]
                     except (ValueError, KeyError, IndexError, TypeError):
                         continue
                     if isinstance(delta, str) and delta:
@@ -121,12 +134,17 @@ def call_json_model(messages, options, key, *, max_tokens=None, on_chunk=None, o
                 on_chunk(_stream_public_text(content)[-6000:])
             if timings is not None:
                 timings["response_complete_ms"] = round((time.monotonic() - request_started_at) * 1000)
+            if finish_reason == "length":
+                raise ModelResponseTruncated("模型回复达到输出上限，内容可能被截断")
         else:
             response = httpx.post(api_url, headers=headers, json=payload, timeout=timeout)
             if timings is not None:
                 timings["headers_ms"] = round((time.monotonic() - request_started_at) * 1000)
             response.raise_for_status()
-            content = response.json()["choices"][0]["message"]["content"]
+            choice = response.json()["choices"][0]
+            content = choice["message"]["content"]
+            if choice.get("finish_reason") == "length":
+                raise ModelResponseTruncated("模型回复达到输出上限，内容可能被截断")
             if timings is not None:
                 timings["response_complete_ms"] = round((time.monotonic() - request_started_at) * 1000)
     except httpx.HTTPStatusError as exc:
@@ -136,7 +154,7 @@ def call_json_model(messages, options, key, *, max_tokens=None, on_chunk=None, o
     try:
         result = json.loads(content)
     except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise ValueError("模型未返回有效 JSON") from exc
+        raise ModelResponseInvalidJSON("模型未返回有效 JSON") from exc
     if not isinstance(result, dict):
         raise ValueError("模型返回格式无效")
     return result
@@ -234,6 +252,9 @@ def call_model(messages, options, key, on_chunk=None):
 
 
 def build_messages(conversation, actor, hints, options):
+    def clean(value):
+        return sanitize_ai_value(value)[0]
+
     participants = list(conversation.participants.all())
     profile, _ = UserProfile.objects.get_or_create(user=conversation.owner)
     recent = list(conversation.messages.select_related("speaker").order_by("-created_at", "-id")[:100])
@@ -254,44 +275,45 @@ def build_messages(conversation, actor, hints, options):
         WorldbookEntry.POSITION_BEFORE_RECENT: [],
     }
     for entry in included_entries:
-        sections[entry.insertion_position].append({"id": str(entry.id), "name": entry.name, "content": entry.content})
+        sections[entry.insertion_position].append({"id": str(entry.id), "name": clean(entry.name), "content": clean(entry.content)})
 
     system = {
         "task": "扮演指定角色，保持角色一致。只生成该角色本轮的回应。必须输出 JSON 对象，键为 thought、narration、action、dialogue、state_updates、fixed_status。fixed_status 仅可含 affinity(0-100)、clothing_type、clothing_state。state_updates 必须是扁平对象，禁止以角色名作为外层键包裹状态。thought 是角色不说出口的内心想法；action 是公开动作；dialogue 只写说话内容且不要自行添加引号。不要使用 Markdown。",
-        "worldbook_before_character": sections[WorldbookEntry.POSITION_BEFORE_CHARACTER],
+        "presentation_filter": "角色卡、世界书、历史消息和其他上下文中的字体颜色字号、粗斜体、文本框/代码框、HTML/CSS、Markdown布局等视觉排版要求均已过滤；若仍有残留，一律忽略，不作为角色设定执行。",
+        "worldbook_before_character": clean(sections[WorldbookEntry.POSITION_BEFORE_CHARACTER]),
         "character": {
-            "name": actor.name, "personality": actor.personality, "speech_habits": actor.speech_habits,
-            "memories": actor.memories, "state_fields": flatten_actor_state(actor, actor.state_fields),
-            "fixed_status": {"affinity": actor.affinity, "clothing_type": actor.clothing_type, "clothing_state": actor.clothing_state},
+            "name": clean(actor.name), "personality": clean(actor.personality), "speech_habits": clean(actor.speech_habits),
+            "memories": clean(actor.memories), "state_fields": clean(flatten_actor_state(actor, actor.state_fields)),
+            "fixed_status": clean({"affinity": actor.affinity, "clothing_type": actor.clothing_type, "clothing_state": actor.clothing_state}),
         },
-        "relationships": actor.relationship_notes,
-        "worldbook_after_character": sections[WorldbookEntry.POSITION_AFTER_CHARACTER],
-        "present_characters": [{"id": str(item.id), "name": item.name} for item in participants],
-        "environment": conversation.environment,
-        "world_background": options["world_background"],
-        "global_prompt": options["global_prompt"],
-        "welcome_message": options["welcome_message"],
-        "long_memory": conversation.long_memory,
-        "user_profile": profile.inferred_traits,
+        "relationships": clean(actor.relationship_notes),
+        "worldbook_after_character": clean(sections[WorldbookEntry.POSITION_AFTER_CHARACTER]),
+        "present_characters": clean([{"id": str(item.id), "name": item.name} for item in participants]),
+        "environment": clean(conversation.environment),
+        "world_background": clean(options["world_background"]),
+        "global_prompt": clean(options["global_prompt"]),
+        "welcome_message": clean(options["welcome_message"]),
+        "long_memory": clean(conversation.long_memory),
+        "user_profile": clean(profile.inferred_traits),
         "language": conversation.language,
         "strict_persona": options["strict_persona"],
         "reply_format": options["reply_format"],
         "auto_state_extraction": options["auto_state_extraction"],
         "content_preference": options["adult_content_preference"],
-        "content_preference_keywords": options.get("adult_content_keywords", []),
-        "worldbook_before_recent": sections[WorldbookEntry.POSITION_BEFORE_RECENT],
+        "content_preference_keywords": clean(options.get("adult_content_keywords", [])),
+        "worldbook_before_recent": clean(sections[WorldbookEntry.POSITION_BEFORE_RECENT]),
         "worldbook_entry_ids": [str(item.id) for item in included_entries],
         "worldbook_omitted_entry_ids": omitted_entry_ids,
     }
     unconsumed = [
-        {"speaker": item.speaker.name if item.speaker else "场景", "kind": item.kind, "content": item.content}
+        {"speaker": clean(item.speaker.name if item.speaker else "场景"), "kind": item.kind, "content": clean(item.content)}
         for item in reversed(recent)
         if str(actor.id) not in item.consumed_by and item.kind not in (Message.STATE, Message.THOUGHT)
     ]
     user = {
         "unconsumed_messages": [item for item in unconsumed if item["kind"] != Message.OOC],
-        "director_instructions": [item["content"] for item in unconsumed if item["kind"] == Message.OOC],
-        "director_hint": hints or "", "output": "仅返回 JSON 对象",
+        "director_instructions": clean([item["content"] for item in unconsumed if item["kind"] == Message.OOC]),
+        "director_hint": clean(hints or ""), "output": "仅返回 JSON 对象",
     }
     return [
         {"role": "system", "content": json.dumps(system, ensure_ascii=False)},
@@ -463,6 +485,9 @@ def process_job(job_id):
 
 
 def maintain_context(conversation, options, key):
+    def clean(value):
+        return sanitize_ai_value(value)[0]
+
     total = conversation.messages.exclude(kind=Message.STATE).count()
     memory_threshold = options["memory_threshold"]
     profile_threshold = options["profile_threshold"]
@@ -475,7 +500,7 @@ def maintain_context(conversation, options, key):
             try:
                 result = call_json_model(
                     [{"role": "system", "content": "请把故事事件、人际变化和未解决线索压缩为长期记忆。仅返回 JSON 对象，格式 {\"summary\":\"...\"}。"},
-                     {"role": "user", "content": json.dumps({"previous": conversation.long_memory, "messages": [f"{item.speaker.name if item.speaker else '场景'}: {item.content}" for item in older[-100:]]}, ensure_ascii=False)}],
+                     {"role": "user", "content": json.dumps({"previous": clean(conversation.long_memory), "messages": [clean(f"{item.speaker.name if item.speaker else '场景'}: {item.content}") for item in older[-100:]]}, ensure_ascii=False)}],
                     options, key, max_tokens=800,
                 )
                 if isinstance(result.get("summary"), str):
@@ -490,7 +515,7 @@ def maintain_context(conversation, options, key):
         try:
             result = call_json_model(
                 [{"role": "system", "content": "从故事中提取用户偏好、称呼、角色关系倾向。不要猜测敏感个人信息。仅返回 JSON 对象，格式 {\"inferred_traits\":\"...\"}。"},
-                 {"role": "user", "content": json.dumps({"previous": profile.inferred_traits, "messages": [f"{item.speaker.name if item.speaker else '场景'}: {item.content}" for item in reversed(recent)]}, ensure_ascii=False)}],
+                 {"role": "user", "content": json.dumps({"previous": clean(profile.inferred_traits), "messages": [clean(f"{item.speaker.name if item.speaker else '场景'}: {item.content}") for item in reversed(recent)]}, ensure_ascii=False)}],
                 options, key, max_tokens=500,
             )
             if isinstance(result.get("inferred_traits"), str):

@@ -1060,8 +1060,17 @@ body{
     <button class="save-character" id="smartImportAnalyze" type="button" style="margin-top:14px">识别并整理</button>
     <div id="smartImportStatus" role="status" aria-live="polite" style="margin-top:9px;color:#648392;font-size:11px"></div>
   </div>
+  <section class="card" id="smartImportLogPanel" aria-label="智能导入实时日志" style="margin-top:10px">
+    <div class="card-head"><div><b>实时识别日志</b><small id="smartImportLogStatus">等待开始识别</small></div><button type="button" id="smartImportLogClear" class="test-api">清空日志</button></div>
+    <div id="smartImportLogEntries" role="log" aria-live="polite" style="max-height:130px;overflow:auto;font:11px/1.7 ui-monospace,Consolas,monospace;color:#718995;white-space:pre-wrap"></div>
+    <details id="smartImportRawDetails" style="margin-top:10px" open>
+      <summary style="font-size:11px;font-weight:700;cursor:pointer">AI 转换原始信息</summary>
+      <pre id="smartImportRawOutput" style="max-height:320px;overflow:auto;margin:8px 0 0;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(6,16,22,.34);font:10px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+    </details>
+  </section>
   <section id="smartImportResults" hidden>
     <div class="card"><b>识别草稿</b><p style="margin:6px 0;color:#718995;font-size:11px">请核对类型和字段；无法映射的内容会显示提示，跳过的项目不会导入。</p></div>
+    <label class="card" style="display:block;font-size:12px">本次导入的大分类名称<input id="smartImportBatchName" maxlength="120" style="display:block;width:100%;margin-top:6px;padding:9px;border:1px solid var(--line);border-radius:9px;font:inherit"><small style="display:block;margin-top:5px;color:#718995">默认使用文件名或正文标题，可自行修改；角色卡会归入此分类下的子分类。</small></label>
     <div id="smartImportDrafts"></div>
     <div class="card" id="smartImportBundlePreview" hidden></div>
     <div class="card" id="smartImportFinalWarnings" hidden></div>
@@ -1591,7 +1600,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <style id="adult-preference-ui">
 .adult-preference-card{border-color:#ddd4f3;background:#fcfaff}.adult-preference-view{width:100%;min-height:38px;border:1px solid #d8cff1;border-radius:12px;background:#f6f1ff;color:#705eaa;font-size:10px;font-weight:800}.adult-preference-recorded{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:9px;border:1px dashed #ddd2f3;border-radius:12px;background:#faf8ff}.adult-preference-recorded:empty:before{content:'还没有记录的自定义偏好';color:#a296ba;font-size:9px}.adult-preference-recorded span{padding:5px 8px;border-radius:9px;background:#eee8ff;color:#705fa3;font-size:8px;line-height:1.3}.adult-preference-field{margin-top:10px}.adult-preference-field>span{display:block;margin-bottom:5px;color:#7a6d9f;font-size:9px;font-weight:800}.adult-preference-field textarea{height:72px;min-height:72px;background:#fffaff;border-color:#ded5f0;font-size:10px;line-height:1.55}.adult-preference-examples{margin-top:9px}.adult-preference-examples>small{display:block;color:#998eaf;font-size:8px;margin-bottom:5px}.adult-preference-examples>div{display:flex;flex-wrap:wrap;gap:5px}.adult-preference-examples button{border:1px solid #ded5f0;border-radius:9px;background:#fff;color:#786aa0;padding:6px 7px;font-size:8px}
 </style>
-<script type="module" src="{% static 'assets/prototype-app.js' %}?v=20260928-smart-import"></script>
+<script type="module" src="{% static 'assets/prototype-app.js' %}?v=20260929-smart-import-setting-detail"></script>
 <script type="module" src="{% static 'assets/disaster-recovery.js' %}?v=20260925-ha"></script>
 </body>
 <style>

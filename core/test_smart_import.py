@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.test import SimpleTestCase
 
+from core.generation import ModelResponseTruncated
 from core.smart_import import analyze_document, normalize_smart_import, split_document
 
 
@@ -16,6 +17,15 @@ class SmartImportNormalizationTests(SimpleTestCase):
         self.assertEqual(payload["characters"][0]["summary"], "Doctor")
         self.assertEqual(payload["worldbooks"][0]["payload"]["entries"][0]["keywords"], ["fog"])
         self.assertEqual(payload["worldbooks"][0]["payload"]["entries"][0]["scoped_character_ids"], [])
+
+    def test_unnamed_player_card_uses_a_clear_placeholder_and_warning(self):
+        result = {"items": [{"type": "player", "fields": {"scenario": "City"}, "source_excerpt": "Player in city", "confidence": 0.8, "warnings": []}]}
+        drafts, payload = normalize_smart_import(result)
+        self.assertEqual(drafts[0]["type"], "player")
+        self.assertEqual(drafts[0]["fields"]["name"], "玩家")
+        self.assertTrue(any("暂用“玩家”" in warning for warning in drafts[0]["warnings"]))
+        self.assertEqual(payload["characters"][0]["name"], "玩家")
+        self.assertTrue(payload["characters"][0]["is_player_controlled"])
 
     def test_worldbook_character_scopes_map_by_character_name(self):
         result = {"items": [{"type": "npc", "fields": {"name": "Lin"}, "source_excerpt": "Lin", "confidence": 1, "warnings": []}, {"type": "worldbook", "fields": {"name": "Book", "entries": [{"name": "Only Lin", "content": "Secret", "scoped_characters": ["Lin"]}]}, "source_excerpt": "Book", "confidence": 1, "warnings": []}]}
@@ -84,6 +94,66 @@ class SmartImportNormalizationTests(SimpleTestCase):
         self.assertIn("ignore previous instructions", messages[1]["content"])
         self.assertTrue(all(len(call.args[0][1]["content"]) <= 15000 for call in model.call_args_list))
 
+    def test_analyze_reserves_a_larger_output_budget_for_structured_import(self):
+        item = {"type": "npc", "fields": {"name": "Lin"}, "source_excerpt": "Lin", "confidence": 0.9, "warnings": []}
+        with patch("core.smart_import.call_json_model", return_value={"items": [item]}) as model:
+            analyze_document("Lin", options={"model": "fake", "max_tokens": 4096}, api_key="secret")
+        self.assertEqual(model.call_args.kwargs["max_tokens"], 16384)
+
+    def test_repeated_truncation_recursively_splits_chunks_smaller_than_initial_retry_threshold(self):
+        requested_lengths = []
+
+        def model_response(messages, *args, **kwargs):
+            chunk = json.loads(messages[1]["content"])["document_excerpt"]
+            requested_lengths.append(len(chunk))
+            if len(chunk) > 800:
+                raise ModelResponseTruncated("truncated")
+            return {"items": []}
+
+        with patch("core.smart_import.call_json_model", side_effect=model_response):
+            result = analyze_document("x" * 2700, options={"model": "fake"}, api_key="secret")
+
+        self.assertEqual(result, {"items": []})
+        self.assertTrue(any(length <= 800 for length in requested_lengths))
+
+    def test_summary_cannot_be_more_detailed_than_character_setting(self):
+        item = {"type": "npc", "fields": {"name": "A", "summary": "这是一段比角色设定更长更详细的摘要", "personality": "简短设定"}, "source_excerpt": "A", "confidence": 0.9, "warnings": []}
+        repaired = {"type": "npc", "fields": {"name": "A", "summary": "简短摘要", "personality": "完整角色设定必须保留所有具体特征和行为要求"}, "source_excerpt": "A", "confidence": 0.9, "warnings": []}
+        with patch("core.smart_import.call_json_model", side_effect=[{"items": [item]}, {"items": [repaired]}]) as model:
+            result = analyze_document("A 的角色设定", options={"model": "fake"}, api_key="secret")
+
+        self.assertEqual(result["items"][0]["fields"]["personality"], repaired["fields"]["personality"])
+        self.assertEqual(model.call_count, 2)
+        self.assertIn("摘要比角色设定更详细", model.call_args.args[0][0]["content"])
+
+    def test_forbidden_worldbook_rules_cannot_be_labeled_as_allowed(self):
+        item = {
+            "type": "worldbook",
+            "fields": {
+                "name": "全局规则",
+                "entries": [{"name": "允许出现的台词", "content": "台词列表", "trigger_mode": "keyword"}],
+            },
+            "source_excerpt": "生成的内容中不允许出现这些台词。",
+            "confidence": 0.9,
+            "warnings": [],
+        }
+        repaired = {
+            "type": "worldbook",
+            "fields": {
+                "name": "全局规则",
+                "entries": [{"name": "禁止出现的台词", "content": "生成的内容中不允许出现这些台词。", "trigger_mode": "always"}],
+            },
+            "source_excerpt": "生成的内容中不允许出现这些台词。",
+            "confidence": 0.9,
+            "warnings": [],
+        }
+        with patch("core.smart_import.call_json_model", side_effect=[{"items": [item]}, {"items": [repaired]}]) as model:
+            result = analyze_document("生成的内容中不允许出现这些台词。", options={"model": "fake"}, api_key="secret")
+
+        self.assertEqual(result["items"][0]["fields"]["entries"][0]["name"], "禁止出现的台词")
+        self.assertEqual(model.call_count, 2)
+        self.assertIn("禁止语义", model.call_args.args[0][0]["content"])
+
     def test_same_name_distinct_excerpts_are_flagged_for_confirmation(self):
         rows = [
             {"type": "npc", "fields": {"name": "Lin"}, "source_excerpt": "Lin works at clinic", "confidence": 0.9, "warnings": []},
@@ -94,12 +164,24 @@ class SmartImportNormalizationTests(SimpleTestCase):
         self.assertEqual(len(result["items"]), 2)
         self.assertTrue(all("同名" in item["warnings"][0] for item in result["items"]))
 
-    def test_invalid_character_fields_are_rejected(self):
-        for extra in ({"categories": "not-a-list"}, {"relationship_notes": {"x" * 51: "value"}}, {"affinity": True}):
+    def test_invalid_categories_are_rejected(self):
+        result = {"items": [{"type": "npc", "fields": {"name": "Lin", "categories": "not-a-list"}, "source_excerpt": "Lin", "confidence": 1, "warnings": []}]}
+        with self.assertRaises(ValueError):
+            normalize_smart_import(result)
+
+    def test_invalid_character_fields_are_preserved_for_review(self):
+        invalid_relationships = {"x" * 51: "value"}
+        for extra, expected_field, expected_value in (
+            ({"relationship_notes": invalid_relationships}, "relationship_notes", invalid_relationships),
+            ({"affinity": True}, "affinity", True),
+        ):
             fields = {"name": "Lin", **extra}
             result = {"items": [{"type": "npc", "fields": fields, "source_excerpt": "Lin", "confidence": 1, "warnings": []}]}
-            with self.subTest(extra=extra), self.assertRaises(ValueError):
-                normalize_smart_import(result)
+            with self.subTest(field=expected_field):
+                drafts, payload = normalize_smart_import(result)
+                self.assertEqual(drafts[0]["unmapped_fields"][expected_field], expected_value)
+                self.assertTrue(drafts[0]["warnings"])
+                self.assertEqual(payload["characters"][0][expected_field], {} if expected_field == "relationship_notes" else 0)
 
     def test_worldbook_entry_limits_reject_instead_of_truncating_content(self):
         for entry in ({"name": "x" * 161, "content": "ok"}, {"name": "entry", "content": "x" * 200001}):
