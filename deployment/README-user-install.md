@@ -12,12 +12,12 @@
 
 ## 一条命令启动
 
-当前用户版发行提交：`7744873880dc57ababc61f73ff20268440625068`。以下命令固定安装该发行版本：
+当前用户版发行提交：`d34d029c6150ee1be7f0545a64711a4f78286037`。以下命令固定安装该发行版本：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/wspbkq666/neon-tavern-user/7744873880dc57ababc61f73ff20268440625068/deployment/bootstrap.sh" \
+curl -fsSL "https://raw.githubusercontent.com/wspbkq666/neon-tavern-user/d34d029c6150ee1be7f0545a64711a4f78286037/deployment/bootstrap.sh" \
   | sudo env NEON_TAVERN_USER_REPO_URL="https://github.com/wspbkq666/neon-tavern-user.git" \
-      NEON_TAVERN_RELEASE_SHA="7744873880dc57ababc61f73ff20268440625068" bash
+      NEON_TAVERN_RELEASE_SHA="d34d029c6150ee1be7f0545a64711a4f78286037" bash
 ```
 
 bootstrap 通过 Git 检出固定 commit，不下载压缩包或远程打包文件。随后安装器会先只读检查系统、DNS、监听端口、Web 服务、Nginx 域名、systemd 单元和目标目录，再显示变更摘要。只有输入“安装”后才会安装 apt 依赖、写入本站文件或操作本站服务。
