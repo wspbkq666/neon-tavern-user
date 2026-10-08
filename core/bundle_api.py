@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -49,11 +50,11 @@ def import_commit(request):
     data, error = body_or_error(request)
     if error:
         return error
-    if set(data) != {"payload"}:
+    if set(data)-{'payload','idempotency_key','task_id'} or 'payload' not in data:
         return JsonResponse({"error": "整合包请求内容无效"}, status=400)
     try:
-        preview = parse_bundle(data["payload"], request.user)
-        result = commit_bundle(preview, request.user)
+        from .import_history import commit_import_batch
+        result = commit_import_batch(request.user,data['payload'],data.get('idempotency_key') or uuid.uuid4().hex,data.get('task_id'))
     except ImportValidationError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
     except (ValueError, TypeError, RecursionError, json.JSONDecodeError) as exc:

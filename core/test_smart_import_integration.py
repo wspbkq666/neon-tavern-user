@@ -53,7 +53,7 @@ class SmartImportEndToEndTests(TestCase):
         self.assertEqual(preview_response.status_code, 200, preview_response.content)
         smart_preview = preview_response.json()
         self.assertEqual([item["type"] for item in smart_preview["drafts"]], ["worldbook", "npc", "player"])
-        self.assertTrue(any("first_mes" in warning for warning in smart_preview["warnings"]))
+        self.assertEqual(smart_preview["payload"]["characters"][0]["first_mes"], "Are you hurt?")
         self.assertEqual(Character.objects.filter(owner=self.user).count(), 0)
         self.assertEqual(Worldbook.objects.filter(owner=self.user).count(), 0)
 

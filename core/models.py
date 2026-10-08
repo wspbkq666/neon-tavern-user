@@ -16,6 +16,13 @@ class Character(models.Model):
     personality = models.TextField(blank=True)
     speech_habits = models.TextField(blank=True)
     memories = models.TextField(blank=True)
+    scenario = models.TextField(blank=True)
+    first_mes = models.TextField(blank=True)
+    alternate_greetings = models.JSONField(default=list, blank=True)
+    character_worldbook = models.JSONField(default=dict, blank=True)
+    context_policy = models.JSONField(default=dict, blank=True)
+    personal_worldbook = models.ForeignKey('Worldbook',null=True,blank=True,on_delete=models.SET_NULL,related_name='bound_character_cards')
+    lore_hash = models.CharField(max_length=64, blank=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True)
     relationship_notes = models.JSONField(default=dict, blank=True)
     state_fields = models.JSONField(default=dict, blank=True)
@@ -26,8 +33,146 @@ class Character(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self,*args,**kwargs):
+        from .context_selection import validate_context_policy
+        update_fields=kwargs.get('update_fields')
+        source_fields={'personality','memories'}
+        if not self._state.adding and (update_fields is None or source_fields.intersection(update_fields)):
+            original=Character.objects.filter(pk=self.pk).values('personality','memories').first()
+            if original and any(original[key]!=getattr(self,key) for key in source_fields if update_fields is None or key in update_fields):
+                self.context_policy={}
+                if update_fields is not None:
+                    kwargs['update_fields']=set(update_fields)|{'context_policy'}
+        validate_context_policy(self.context_policy)
+        from .character_lore import validate_extended_fields, sync_character_lore
+        validate_extended_fields(self)
+        with transaction.atomic():
+            result=super().save(*args,**kwargs)
+            update_fields=kwargs.get('update_fields')
+            if update_fields is None or 'character_worldbook' in update_fields:
+                sync_character_lore(self)
+            if update_fields is None or {'personality','memories'}.intersection(update_fields):
+                from .context_selection import split_source
+                retained=[]
+                for field in ('personality','memories'):
+                    if update_fields is not None and field not in update_fields:
+                        continue
+                    for row in split_source(getattr(self,field)):
+                        segment,_=CharacterSettingSegment.objects.update_or_create(character=self,source_field=field,start=row['start'],end=row['end'],defaults={'text':row['text']})
+                        retained.append(segment.pk)
+                    self.setting_segments.filter(source_field=field).exclude(pk__in=retained).delete()
+            return result
+
     class Meta:
         ordering = ["name", "created_at"]
+
+
+class GenerationContextTrace(models.Model):
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    job=models.ForeignKey('GenerationJob',on_delete=models.CASCADE,related_name='context_traces')
+    actor=models.ForeignKey(Character,null=True,on_delete=models.SET_NULL)
+    selected=models.JSONField(default=list)
+    excluded=models.JSONField(default=list)
+    estimated_usage=models.JSONField(default=dict)
+    configuration=models.JSONField(default=dict)
+    character_snapshot=models.JSONField(default=dict)
+    content_hash=models.CharField(max_length=64)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+
+class PersonalBackupJob(models.Model):
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    owner=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='personal_backup_jobs')
+    kind=models.CharField(max_length=20)
+    status=models.CharField(max_length=20,default='queued')
+    package=models.BinaryField(null=True,blank=True)
+    result=models.JSONField(default=dict)
+    error=models.TextField(blank=True)
+    lease_token=models.CharField(max_length=64,blank=True)
+    lease_until=models.DateTimeField(null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+
+class PersonalRestoreReceipt(models.Model):
+    owner=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    idempotency_key=models.CharField(max_length=200)
+    package_hash=models.CharField(max_length=64)
+    result=models.JSONField(default=dict)
+
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['owner','idempotency_key'],name='unique_personal_restore_key')]
+
+
+class ImportBatch(models.Model):
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    owner=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='import_batches')
+    task=models.ForeignKey('ImportTask',null=True,blank=True,on_delete=models.SET_NULL,related_name='batches')
+    idempotency_key=models.CharField(max_length=200)
+    payload_hash=models.CharField(max_length=64)
+    created_objects=models.JSONField(default=list)
+    result=models.JSONField(default=dict)
+    undo_result=models.JSONField(default=dict)
+    revision=models.PositiveIntegerField(default=0)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['owner','idempotency_key'],name='unique_import_batch_key')]
+
+
+class ImportTask(models.Model):
+    parent=models.ForeignKey('self',null=True,blank=True,on_delete=models.SET_NULL,related_name='rescans')
+    source_start=models.PositiveIntegerField(default=0)
+    source_end=models.PositiveIntegerField(default=0)
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    owner=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='import_tasks')
+    filename=models.CharField(max_length=250)
+    source=models.TextField()
+    source_hash=models.CharField(max_length=64)
+    options=models.JSONField(default=dict)
+    status=models.CharField(max_length=20,default='queued')
+    revision=models.PositiveIntegerField(default=0)
+    result=models.JSONField(default=dict)
+    coverage_reviews=models.JSONField(default=dict)
+    error=models.TextField(blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+
+
+class ImportSegment(models.Model):
+    task=models.ForeignKey(ImportTask,on_delete=models.CASCADE,related_name='segments')
+    index=models.PositiveIntegerField()
+    start=models.PositiveIntegerField()
+    end=models.PositiveIntegerField()
+    status=models.CharField(max_length=20,default='queued')
+    lease_token=models.CharField(max_length=64,blank=True)
+    lease_until=models.DateTimeField(null=True,blank=True)
+    worker_id=models.CharField(max_length=120,blank=True)
+    attempts=models.PositiveIntegerField(default=0)
+    raw_output=models.TextField(blank=True)
+    result=models.JSONField(default=dict)
+    error=models.TextField(blank=True)
+
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['task','index'],name='unique_import_task_segment')]
+        ordering=['index']
+
+
+class ImportTaskEvent(models.Model):
+    task=models.ForeignKey(ImportTask,on_delete=models.CASCADE,related_name='events')
+    payload=models.JSONField(default=dict)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+
+class CharacterSettingSegment(models.Model):
+    character=models.ForeignKey(Character,on_delete=models.CASCADE,related_name='setting_segments')
+    source_field=models.CharField(max_length=30)
+    start=models.PositiveIntegerField()
+    end=models.PositiveIntegerField()
+    text=models.TextField()
+
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['character','source_field','start','end'],name='unique_character_source_segment')]
+        ordering=['source_field','start']
 
 
 class CharacterCategory(models.Model):
@@ -72,9 +217,15 @@ class Conversation(models.Model):
     auto_generate = models.BooleanField(default=False)
     auto_actor_ids = models.JSONField(default=list, blank=True)
     auto_mode = models.CharField(max_length=8, default="serial")
+    generation_configuration = models.JSONField(default=dict,blank=True)
     long_memory = models.TextField(blank=True)
     memory_message_count = models.PositiveIntegerField(default=0)
     profile_message_count = models.PositiveIntegerField(default=0)
+    story_revision = models.PositiveIntegerField(default=0)
+    memory_revision = models.PositiveIntegerField(default=0)
+    locked_facts = models.JSONField(default=list, blank=True)
+    memory_summary_status = models.CharField(max_length=12, default='idle')
+    memory_summary_error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -90,6 +241,23 @@ class ConversationParticipant(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["conversation", "character"], name="unique_conversation_character")]
         ordering = ["position"]
+
+
+class ConversationActorState(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='actor_states')
+    character = models.ForeignKey(Character, on_delete=models.PROTECT, related_name='story_states')
+    template_snapshot = models.JSONField(default=dict)
+    state_fields = models.JSONField(default=dict)
+    relationship_notes = models.JSONField(default=dict)
+    affinity = models.PositiveSmallIntegerField(default=0)
+    clothing_type = models.CharField(max_length=200, blank=True)
+    clothing_state = models.CharField(max_length=200, blank=True)
+    revision = models.PositiveIntegerField(default=0)
+    initialization_source = models.CharField(max_length=30, default='角色卡初始设定')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['conversation','character'], name='unique_story_actor_state')]
 
 
 class Message(models.Model):
@@ -109,13 +277,28 @@ class Message(models.Model):
     source = models.CharField(max_length=8, default="user")
     consumed_by = models.JSONField(default=list, blank=True)
     state_snapshot = models.JSONField(default=dict, blank=True)
+    story_snapshot = models.JSONField(default=dict, blank=True)
+    context_trace = models.ForeignKey(GenerationContextTrace,null=True,blank=True,on_delete=models.SET_NULL,related_name='messages')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["created_at", "id"]
 
 
+class StoryCheckpoint(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='checkpoints')
+    name = models.CharField(max_length=120)
+    snapshot = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at','-id']
+
+
 class GenerationJob(models.Model):
+    lease_until=models.DateTimeField(null=True,blank=True)
+    lease_token=models.CharField(max_length=64,blank=True)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="generation_jobs")
     requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -126,6 +309,8 @@ class GenerationJob(models.Model):
     status = models.CharField(max_length=12, default="queued")
     progress = models.JSONField(default=dict, blank=True)
     error = models.TextField(blank=True)
+    story_revision = models.PositiveIntegerField(default=0)
+    task_kind = models.CharField(max_length=12, default='dialogue')
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
@@ -135,6 +320,20 @@ class GenerationJob(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["conversation"], condition=Q(status="queued"), name="one_queued_generation_per_conversation")
         ]
+
+
+class StoryMemoryRevision(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='memory_history')
+    revision = models.PositiveIntegerField()
+    text = models.TextField(blank=True)
+    locked_facts = models.JSONField(default=list)
+    source = models.CharField(max_length=20)
+    message_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-revision']
+        constraints = [models.UniqueConstraint(fields=['conversation','revision'],name='unique_story_memory_revision')]
 
 
 class SiteSettings(models.Model):

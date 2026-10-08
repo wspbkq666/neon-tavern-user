@@ -1124,6 +1124,8 @@ body{
 
   
 
+  <label>模型上下文容量（令牌）<input id="modelContextCapacity" type="number" min="2048" max="2000000" value="65536"></label>
+  <small>填写服务商实际支持的容量。使用保守估算，包含输入、输出预算和预留开销；必要设定超限会阻止生成。</small>
   <button class="detail-toggle" onclick="toggleDetail('modelDetail', this)">
     <span>详细设置</span><span class="toggle-arrow">⌄</span>
   </button>
@@ -1384,6 +1386,16 @@ function toggleDetail(id, btn){
     </section>
 
     <section class="role-form-card">
+      <div class="role-section-title">场景与开场内容</div>
+      <button type="button" id="roleContextConfigure" hidden>长设定与核心确认</button>
+      <label><span>场景与情境</span><textarea id="roleScenario" rows="5" style="height:auto;resize:vertical"></textarea></label>
+      <label><span>默认开场白</span><textarea id="roleFirstMessage" rows="5" style="height:auto;resize:vertical"></textarea></label>
+      <label><span>备用开场白（JSON 字符串数组）</span><textarea id="roleAlternateGreetings" rows="5" style="height:auto;resize:vertical">[]</textarea></label>
+      <label><span>角色专属世界书（JSON 对象或数组）</span><textarea id="roleCharacterWorldbook" rows="8" style="height:auto;resize:vertical">{}</textarea></label>
+      <small>专属世界书支持 entries 条目数组，每条包含 name、content、keywords、trigger_mode 和 priority。触发方式为 always、keyword 或 manual。</small>
+    </section>
+
+    <section class="role-form-card">
       <div class="role-section-title">与我的关系</div>
 
       <label class="role-field">
@@ -1600,7 +1612,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <style id="adult-preference-ui">
 .adult-preference-card{border-color:#ddd4f3;background:#fcfaff}.adult-preference-view{width:100%;min-height:38px;border:1px solid #d8cff1;border-radius:12px;background:#f6f1ff;color:#705eaa;font-size:10px;font-weight:800}.adult-preference-recorded{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:9px;border:1px dashed #ddd2f3;border-radius:12px;background:#faf8ff}.adult-preference-recorded:empty:before{content:'还没有记录的自定义偏好';color:#a296ba;font-size:9px}.adult-preference-recorded span{padding:5px 8px;border-radius:9px;background:#eee8ff;color:#705fa3;font-size:8px;line-height:1.3}.adult-preference-field{margin-top:10px}.adult-preference-field>span{display:block;margin-bottom:5px;color:#7a6d9f;font-size:9px;font-weight:800}.adult-preference-field textarea{height:72px;min-height:72px;background:#fffaff;border-color:#ded5f0;font-size:10px;line-height:1.55}.adult-preference-examples{margin-top:9px}.adult-preference-examples>small{display:block;color:#998eaf;font-size:8px;margin-bottom:5px}.adult-preference-examples>div{display:flex;flex-wrap:wrap;gap:5px}.adult-preference-examples button{border:1px solid #ded5f0;border-radius:9px;background:#fff;color:#786aa0;padding:6px 7px;font-size:8px}
 </style>
-<script type="module" src="{% static 'assets/prototype-app.js' %}?v=20260929-smart-import-setting-detail"></script>
+<script type="module" src="{% static 'assets/prototype-app.js' %}?v=20261008-user-features"></script>
 <script type="module" src="{% static 'assets/disaster-recovery.js' %}?v=20260925-ha"></script>
 </body>
 <style>

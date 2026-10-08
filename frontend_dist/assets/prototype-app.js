@@ -1,5 +1,11 @@
+import {openImportMerge} from './import-merge.js';
+import {displayRoleValue,readRoleValue,mergeRoleRelationships} from './role-values.js';
 import { api, apiStream, escapeHtml as h, listFrom, dateLabel } from './common.js?v=20260928-smart-import-live-log';
 import { splitWorldBookKeywords } from './worldbook-keywords.js';
+import { openPersonalBackup } from './personal-backup.js';
+import { openImportCoverage } from './import-coverage.js';
+import { openCharacterContext } from './context-tools.js';
+import { openStoryState, openStoryMemory, openStoryCheckpoints } from './story-tools.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -161,7 +167,7 @@ function smartImportRenderDrafts() {
     const categoryEditor = draft.type === 'player'
       ? `<label style="display:block;margin:8px 0;font-size:11px">子分类（玩家卡默认归入“我的角色卡”，可保留多个分类，JSON 数组）<textarea data-smart-import-field="categories" data-index="${index}" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px;font:11px monospace">${h(JSON.stringify(fields.categories || ['我的角色卡'], null, 2))}</textarea></label>`
       : `<label style="display:block;margin:8px 0;font-size:11px">子分类（可填写 AI 识别的类型，也可自行添加）<input data-smart-import-category data-index="${index}" maxlength="120" value="${h(draft.categoryName || '待分类')}" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px"></label>`;
-    const characterFields = ['summary', 'personality', 'speech_habits', 'memories', 'clothing_type', 'clothing_state'].map(key => `<label style="display:block;margin:8px 0;font-size:11px">${({ summary: '摘要', personality: '角色设定', speech_habits: '说话习惯', memories: '背景与记忆', clothing_type: '衣着类型', clothing_state: '衣着状态' })[key]}<textarea data-smart-import-field="${key}" data-index="${index}" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px">${h(fields[key] || '')}</textarea></label>`).join('') + `<label style="display:block;margin:8px 0;font-size:11px">好感度（0–100）<input data-smart-import-field="affinity" data-index="${index}" type="number" min="0" max="100" step="1" value="${h(fields.affinity ?? 0)}" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px"></label>` + ['relationship_notes', 'state_fields'].map(key => `<label style="display:block;margin:8px 0;font-size:11px">${({ relationship_notes: '关系备注（JSON）', state_fields: '状态字段（JSON）' })[key]}<textarea data-smart-import-field="${key}" data-index="${index}" rows="3" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px;font:11px monospace">${h(JSON.stringify(fields[key] ?? {}, null, 2))}</textarea></label>`).join('') + categoryEditor;
+    const characterFields = ['summary', 'personality', 'speech_habits', 'memories', 'scenario', 'first_mes', 'clothing_type', 'clothing_state'].map(key => `<label style="display:block;margin:8px 0;font-size:11px">${({ summary: '摘要', personality: '角色设定', speech_habits: '说话习惯', memories: '背景与记忆', scenario: '场景与情境', first_mes: '开场白', clothing_type: '衣着类型', clothing_state: '衣着状态' })[key]}<textarea data-smart-import-field="${key}" data-index="${index}" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px">${h(fields[key] || '')}</textarea></label>`).join('') + `<label style="display:block;margin:8px 0;font-size:11px">好感度（0–100）<input data-smart-import-field="affinity" data-index="${index}" type="number" min="0" max="100" step="1" value="${h(fields.affinity ?? 0)}" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px"></label>` + ['relationship_notes', 'state_fields', 'alternate_greetings', 'character_worldbook'].map(key => `<label style="display:block;margin:8px 0;font-size:11px">${({ relationship_notes: '关系备注（JSON）', state_fields: '状态字段（JSON）', alternate_greetings: '备用开场白（JSON 数组）', character_worldbook: '角色专属世界书（JSON 对象或数组）' })[key]}<textarea data-smart-import-field="${key}" data-index="${index}" rows="3" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px;font:11px monospace">${h(JSON.stringify(fields[key] ?? (key === 'alternate_greetings' ? [] : {}), null, 2))}</textarea></label>`).join('') + categoryEditor;
     const entries = Array.isArray(fields.entries) ? fields.entries : [];
     const worldbookFields = `<label style="display:block;margin:8px 0;font-size:11px">世界书简介<textarea data-smart-import-field="description" data-index="${index}" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px">${h(fields.description || '')}</textarea></label><div style="margin-top:10px"><div style="font-size:11px;font-weight:800">条目设置</div><small style="color:#8198a2;font-size:9px">对话逻辑和行为规则通常设为始终启用；补充设定通常使用关键词触发。</small>${entries.map((entry, entryIndex) => smartImportWorldbookEntryMarkup(smartImportWorldbookEntryDefaults(entry, entryIndex), entryIndex, index)).join('')}<button type="button" class="test-api" data-smart-import-entry-action="add" data-index="${index}" style="width:100%;margin-top:8px">＋ 新增世界书条目</button></div>`;
     const unmapped = draft.unmapped_fields && Object.keys(draft.unmapped_fields).length ? `<details style="margin:8px 0"><summary style="font-size:11px;color:#a76b32">查看暂不能导入的字段</summary><pre style="white-space:pre-wrap;font-size:10px">${h(JSON.stringify(draft.unmapped_fields, null, 2))}</pre></details>` : '';
@@ -169,7 +175,7 @@ function smartImportRenderDrafts() {
   }).join('');
 }
 function smartImportBuildPayload() {
-  const payload = { format: 'neon-tavern-bundle', version: 1, characters: [], worldbooks: [] };
+  const payload = { format: 'neon-tavern-bundle', version: 2, characters: [], worldbooks: [] };
   const characterIds = new Map();
   const batchName = String(smartImportState.batchName || '').trim();
   const hasCharacters = smartImportState.drafts.some(draft => !draft.skipped && ['npc', 'player'].includes(draft.type));
@@ -197,7 +203,7 @@ function smartImportBuildPayload() {
       if (!childName || childName.length > 120 || childName.includes('/')) throw new Error('角色子分类需填写，且不能包含斜杠');
       childCategories = [childName];
     }
-    payload.characters.push({ package_id: packageId, name, summary: smartImportTextValue(fields.summary, 200, '角色摘要'), personality: smartImportTextValue(fields.personality, 10000, '性格'), speech_habits: smartImportTextValue(fields.speech_habits, 5000, '说话习惯'), memories: smartImportTextValue(fields.memories, 10000, '角色背景'), relationship_notes: fields.relationship_notes, state_fields: fields.state_fields, affinity: fields.affinity, clothing_type: smartImportTextValue(fields.clothing_type, 200, '衣着类型'), clothing_state: smartImportTextValue(fields.clothing_state, 200, '衣着状态'), is_player_controlled: draft.type === 'player', categories: childCategories.map(category => `${batchName}/${category}`) });
+    payload.characters.push({ package_id: packageId, name, scenario: smartImportTextValue(fields.scenario, 100000, '场景'), first_mes: smartImportTextValue(fields.first_mes, 100000, '开场白'), alternate_greetings: fields.alternate_greetings || [], character_worldbook: fields.character_worldbook || {}, summary: smartImportTextValue(fields.summary, 200, '角色摘要'), personality: smartImportTextValue(fields.personality, 100000, '性格'), speech_habits: smartImportTextValue(fields.speech_habits, 100000, '说话习惯'), memories: smartImportTextValue(fields.memories, 100000, '角色背景'), relationship_notes: fields.relationship_notes, state_fields: fields.state_fields, affinity: fields.affinity, clothing_type: smartImportTextValue(fields.clothing_type, 200, '衣着类型'), clothing_state: smartImportTextValue(fields.clothing_state, 200, '衣着状态'), is_player_controlled: draft.type === 'player', categories: childCategories.map(category => `${batchName}/${category}`) });
   }
   for (const draft of smartImportState.drafts) {
     if (draft.skipped || draft.type !== 'worldbook') continue;
@@ -233,10 +239,10 @@ function smartImportBuildPayload() {
 function smartImportEdit(index, key, value) {
   const draft = smartImportState.drafts[index];
   if (!draft) return;
-  if (['entries', 'relationship_notes', 'state_fields', 'categories'].includes(key)) {
+  if (['entries', 'relationship_notes', 'state_fields', 'categories', 'alternate_greetings', 'character_worldbook'].includes(key)) {
     let parsed;
     try { parsed = JSON.parse(value); }
-    catch { draft.editErrors = { ...(draft.editErrors || {}), [key]: true }; $('#smartImportStatus').textContent = `${({ entries: '世界书条目', relationship_notes: '关系备注', state_fields: '状态字段', categories: '角色分类' })[key]} JSON 格式无效，请检查后重试。`; smartImportInvalidatePreview(); return; }
+    catch { draft.editErrors = { ...(draft.editErrors || {}), [key]: true }; $('#smartImportStatus').textContent = `${({ entries: '世界书条目', relationship_notes: '关系备注', state_fields: '状态字段', categories: '角色分类', alternate_greetings: '备用开场白', character_worldbook: '角色专属世界书' })[key]} JSON 格式无效，请检查后重试。`; smartImportInvalidatePreview(); return; }
     draft.fields[key] = parsed;
     if (draft.editErrors) delete draft.editErrors[key];
   } else if (key === 'affinity') {
@@ -325,6 +331,103 @@ $('#smartImportLogClear').addEventListener('click', () => {
   $('#smartImportRawOutput').textContent = '';
   $('#smartImportLogStatus').textContent = smartImportState.busy ? '正在识别' : '日志已清空';
 });
+async function smartImportSaveDrafts() {
+  if(!activeImportTaskId)throw new Error('请先打开已保存的导入任务');
+  const task=await api(`/api/import-tasks/${path(activeImportTaskId)}/`);
+  return api(`/api/import-tasks/${path(activeImportTaskId)}/`,{method:'PATCH',body:{revision:smartImportTaskRevision ?? task.revision,drafts:smartImportState.drafts,batch_name:smartImportState.batchName}});
+}
+let smartImportTaskRevision=null;
+async function loadImportHistory() {
+  let panel=$('#importHistory');
+  if(!panel){panel=document.createElement('section');panel.id='importHistory';$('#materials').append(panel);}
+  const result=await api('/api/import-batches/');
+  panel.innerHTML='<h3>导入历史</h3>'+(result.batches || []).map(batch=>`<div class="card"><b>${h(batch.filename)}</b><p>${h(new Date(batch.created_at).toLocaleString())} · ${batch.count} 个新增对象 · ${batch.undone?'已撤销':'已导入'}</p><button data-batch="${h(batch.id)}">查看撤销预览</button></div>`).join('');
+  panel.onclick=async event=>{
+    const button=event.target.closest('[data-batch]');if(!button)return;
+    try {const endpoint=`/api/import-batches/${path(button.dataset.batch)}/`;const preview=await api(endpoint);
+      const message=`将删除 ${preview.deleted.length} 个未使用且未修改的对象；保留 ${preview.retained.length} 个对象。\n${preview.retained.map(row=>`${row.name}：${row.reason}`).join('\n')}`;
+      if(preview.already_undone){window.alert(`该批次已经撤销。\n${message}`);return;}
+      if(!window.confirm(`${message}\n确认撤销？`))return;
+      await api(endpoint,{method:'POST',body:{revision:preview.revision}});await refreshLists();await loadImportHistory();window.toast('导入已撤销，已使用或修改的素材保留');
+    }catch(error){fail(error);}
+  };
+}
+
+function smartImportAcceptResult(result,file,text) {
+    smartImportState.batchName = result.batch_name || smartImportDefaultBatchName(file, text);
+    $('#smartImportBatchName').value = smartImportState.batchName;
+    smartImportState.drafts = result.drafts.map(draft => {
+      const fields = { ...(draft.fields || {}) };
+      if (draft.type === 'worldbook') fields.entries = (Array.isArray(fields.entries) ? fields.entries : []).map((entry, index) => smartImportWorldbookEntryDefaults(entry, index));
+      const inferred = Array.isArray(fields.categories) ? fields.categories.map(value => String(value).split('/').filter(Boolean).at(-1)).find(Boolean) : '';
+      if (draft.type === 'player' && !fields.categories?.length) fields.categories = ['我的角色卡'];
+      return { ...draft, fields, categoryName: draft.categoryName || inferred || '待分类', skipped: draft.skipped ?? draft.type === 'unknown' };
+    });
+    smartImportState.payload = result.payload;
+    smartImportState.revision += 1;
+    $('#smartImportResults').hidden = false;
+    if(!$('#smartImportSaveDrafts')) {
+      const save=document.createElement('button');save.id='smartImportSaveDrafts';save.textContent='保存草稿';$('#smartImportResults').prepend(save);
+      save.onclick=()=>smartImportSaveDrafts().then(task=>{smartImportTaskRevision=task.revision;window.toast('草稿已保存');}).catch(fail);
+      const merge=document.createElement('button');merge.textContent='合并同名分段';$('#smartImportResults').prepend(merge);
+      merge.onclick=async()=>{try{const saved=await smartImportSaveDrafts();smartImportTaskRevision=saved.revision;await openImportMerge(activeImportTaskId,async()=>{const task=await api(`/api/import-tasks/${path(activeImportTaskId)}/`);smartImportTaskRevision=task.revision;smartImportAcceptResult(task.result,{name:task.filename},task.source);});}catch(error){fail(error);}};
+      const coverage=document.createElement('button');coverage.textContent='查漏与原文复核';$('#smartImportResults').prepend(coverage);
+      coverage.onclick=async()=>{try {const saved=await smartImportSaveDrafts();smartImportTaskRevision=saved.revision;await openImportCoverage(activeImportTaskId,async()=>{const task=await api(`/api/import-tasks/${path(activeImportTaskId)}/`);smartImportTaskRevision=task.revision;smartImportAcceptResult(task.result,{name:task.filename},task.source);});}catch(error){fail(error);}};
+    }
+    $('#smartImportValidate').disabled = false;
+    $('#smartImportBundlePreview').hidden = true;
+    $('#smartImportConfirm').hidden = true;
+    smartImportRenderDrafts();
+    $('#smartImportStatus').textContent = `识别完成，找到 ${result.drafts.length} 条草稿。请检查后继续。`;
+    $('#smartImportLogStatus').textContent = '识别完成';
+    smartImportLog(`草稿整理完成：${result.drafts.length} 条；预览结果可在上方检查，尚未导入保存。`);
+    if (result.warnings?.length) $('#smartImportFinalWarnings').innerHTML = `<b>识别提示</b><div style="margin-top:6px">${result.warnings.map(h).join('<br>')}</div>`, $('#smartImportFinalWarnings').hidden = false;
+    else $('#smartImportFinalWarnings').hidden = true;
+}
+let activeImportTaskId=null;
+async function smartImportWatchTask(id) {
+  activeImportTaskId=id;
+  let cursor=0;
+  while(activeImportTaskId===id) {
+    const task=await api(`/api/import-tasks/${path(id)}/?cursor=${cursor}`);
+    for(const event of task.events || []) {
+      if(event.type==='raw_delta') $('#smartImportRawOutput').textContent+=event.text || '';
+      else if(event.type==='progress') smartImportLog(event.stage==='ai_attempt'?`第 ${event.segment_index+1} 段正在识别（尝试 ${event.attempt} 次）`:event.stage==='document_ready'?`文档已保存，共 ${event.characters} 字`:event.stage==='normalizing'?'正在检查分段格式':`识别进度：${({quality_retry:'正在补充设定细节',format_retry:'正在重试回复格式',chunk_split:'正在拆分过长回复'})[event.stage] || '处理中'}`);
+      else if(event.message) smartImportLog(event.message);
+    }
+    cursor=task.cursor;
+    $('#smartImportLogStatus').textContent=`${({queued:'等待后台',running:'正在识别',done:'识别完成',failed:'识别失败',canceled:'已取消'})[task.status]} · ${task.completed}/${task.total} 段`;
+    if(task.more_events) continue;
+    if(task.status==='done') {smartImportTaskRevision=task.revision;await smartImportLoadTasks();return task.result;}
+    if(['failed','canceled'].includes(task.status)) {await smartImportLoadTasks();throw new Error(task.error || '任务已取消，可从导入任务列表继续');}
+    await new Promise(resolve=>setTimeout(resolve,2000));
+  }
+  throw new Error('已切换导入任务');
+}
+async function smartImportLoadTasks() {
+  let panel=$('#smartImportTaskList');
+  if(!panel) {panel=document.createElement('section');panel.id='smartImportTaskList';$('#smartImportAnalyze').parentElement.after(panel);}
+  const result=await api('/api/import-tasks/');
+  panel.innerHTML='<h4>已保存的导入任务</h4>'+(result.tasks || []).map(task=>`<div class="card"><b>${h(task.filename)}</b><p>${h(({queued:'等待后台',running:'正在识别',done:'已完成',failed:'失败',canceled:'已取消'})[task.status])} · ${task.completed}/${task.total} 段</p><button data-task-open="${h(task.id)}">${task.status==='done'?'打开草稿':'查看日志与进度'}</button>${['failed','canceled'].includes(task.status)&&task.configuration_changed?`<p>模型配置已变化；原结果保留。恢复原配置后可继续。</p><button data-task-restart="${h(task.id)}">使用当前配置重新识别</button>`:''}${['failed','canceled'].includes(task.status)&&!task.configuration_changed?`<button data-task-resume="${h(task.id)}">继续未完成部分</button>`:''}${['queued','running'].includes(task.status)?`<button data-task-cancel="${h(task.id)}">取消</button>`:''}</div>`).join('');
+  panel.onclick=async event=>{
+    const button=event.target.closest('button');if(!button)return;
+    try {
+      if(button.dataset.taskCancel) {await api(`/api/import-tasks/${path(button.dataset.taskCancel)}/`,{method:'POST',body:{action:'cancel'}});await smartImportLoadTasks();return;}
+      let id=button.dataset.taskOpen || button.dataset.taskResume || button.dataset.taskRestart;
+      if(!id)return;
+      if(smartImportState.busy && !window.confirm('切换查看该任务？当前后台识别仍会继续。'))return;
+      if(button.dataset.taskRestart) {if(!window.confirm('使用当前模型重新识别全部原文？旧任务和草稿保留，新任务将单独创建。'))return; const fresh=await api(`/api/import-tasks/${path(id)}/`,{method:'POST',body:{action:'restart'}});id=fresh.id;}
+      if(button.dataset.taskResume) await api(`/api/import-tasks/${path(id)}/`,{method:'POST',body:{action:'resume'}});
+      const task=await api(`/api/import-tasks/${path(id)}/`);
+      $('#smartImportText').value=task.source;$('#smartImportFile').value='';
+      smartImportInvalidatePreview();const revision=smartImportState.revision;
+      smartImportResetLog();$('#smartImportResults').hidden=true;
+      const result=await smartImportWatchTask(id);
+      if(revision===smartImportState.revision)smartImportAcceptResult(result,{name:task.filename},task.source);
+    }catch(error){$('#smartImportStatus').textContent=error.message;}
+  };
+}
+
 $('#smartImportAnalyze').addEventListener('click', async () => {
   if (state.readOnly) { $('#smartImportStatus').textContent = '管理员只读查看中，不能使用智能导入。'; return; }
   const button = $('#smartImportAnalyze');
@@ -343,30 +446,11 @@ $('#smartImportAnalyze').addEventListener('click', async () => {
   $('#smartImportValidate').disabled = true;
   $('#smartImportStatus').textContent = '正在识别，详细进度和 AI 原始回复见下方日志。';
   try {
-    const response = await apiStream('/api/smart-import/preview/stream/', { method: 'POST', body });
-    const result = await smartImportConsumeEvents(response);
+    const task = await api('/api/import-tasks/', { method: 'POST', body });
+    await smartImportLoadTasks();
+    const result = await smartImportWatchTask(task.id);
     if (revision !== smartImportState.revision) { $('#smartImportStatus').textContent = '输入已更改，已忽略过期的识别结果。请重新识别。'; smartImportLog('输入内容在识别期间发生变化，已忽略过期结果。'); return; }
-    smartImportState.batchName = smartImportDefaultBatchName(file, text);
-    $('#smartImportBatchName').value = smartImportState.batchName;
-    smartImportState.drafts = result.drafts.map(draft => {
-      const fields = { ...(draft.fields || {}) };
-      if (draft.type === 'worldbook') fields.entries = (Array.isArray(fields.entries) ? fields.entries : []).map((entry, index) => smartImportWorldbookEntryDefaults(entry, index));
-      const inferred = Array.isArray(fields.categories) ? fields.categories.map(value => String(value).split('/').filter(Boolean).at(-1)).find(Boolean) : '';
-      if (draft.type === 'player' && !fields.categories?.length) fields.categories = ['我的角色卡'];
-      return { ...draft, fields, categoryName: inferred || '待分类', skipped: draft.type === 'unknown' };
-    });
-    smartImportState.payload = result.payload;
-    smartImportState.revision += 1;
-    $('#smartImportResults').hidden = false;
-    $('#smartImportValidate').disabled = false;
-    $('#smartImportBundlePreview').hidden = true;
-    $('#smartImportConfirm').hidden = true;
-    smartImportRenderDrafts();
-    $('#smartImportStatus').textContent = `识别完成，找到 ${result.drafts.length} 条草稿。请检查后继续。`;
-    $('#smartImportLogStatus').textContent = '识别完成';
-    smartImportLog(`草稿整理完成：${result.drafts.length} 条；预览结果可在上方检查，尚未导入保存。`);
-    if (result.warnings?.length) $('#smartImportFinalWarnings').innerHTML = `<b>识别提示</b><div style="margin-top:6px">${result.warnings.map(h).join('<br>')}</div>`, $('#smartImportFinalWarnings').hidden = false;
-    else $('#smartImportFinalWarnings').hidden = true;
+    smartImportAcceptResult(result, file, text);
   } catch (error) {
     if (revision === smartImportState.revision) {
       $('#smartImportStatus').textContent = `识别失败：${error.message}。输入内容仍保留，可修改后重试。`;
@@ -396,7 +480,7 @@ $('#smartImportConfirm').addEventListener('click', async () => {
   if (!smartImportState.preview || !smartImportState.payload) return;
   const button = $('#smartImportConfirm'); button.disabled = true;
   try {
-    const result = await api('/api/bundles/import/commit/', { method: 'POST', body: { payload: smartImportState.payload } });
+    const result = await api('/api/bundles/import/commit/', { method: 'POST', body: { payload: smartImportState.payload, task_id: activeImportTaskId, idempotency_key: `智能导入:${activeImportTaskId}:${smartImportState.revision}` } });
     await refreshLists(); await loadWorldBooks(result.worldbooks[0]?.id || null);
     window.toast(`已导入 ${result.characters.length} 张角色卡和 ${result.worldbooks.length} 本世界书`);
     smartImportState.drafts = []; smartImportState.payload = null; smartImportState.preview = null;
@@ -409,6 +493,7 @@ $('#smartImportConfirm').addEventListener('click', async () => {
 window.closeBundleSheet = () => {
   $('#bundleOverlay').classList.remove('open');
   $('#bundleOverlay').classList.remove('bundle-market-top');
+  bundleState.commitKey = null;
   bundleState.payload = null;
   bundleState.preview = null;
   bundleState.mode = 'file';
@@ -500,7 +585,7 @@ $('#bundleCommitButton').addEventListener('click', async () => {
   if (!bundleState.payload || !bundleState.preview) return;
   const button = $('#bundleCommitButton'); button.disabled = true;
   try {
-    const result = await api('/api/bundles/import/commit/', { method: 'POST', body: { payload: bundleState.payload } });
+    const result = await api('/api/bundles/import/commit/', { method: 'POST', body: { payload: bundleState.payload, idempotency_key: bundleState.commitKey ||= smartImportNewId() } });
     await refreshLists(); await loadWorldBooks(result.worldbooks[0]?.id || null);
     window.closeBundleSheet();
     window.toast(`已导入 ${result.characters.length} 张角色卡和 ${result.worldbooks.length} 本世界书`);
@@ -759,6 +844,17 @@ function renderCharacters() {
   $('#characterTools').hidden = state.readOnly;
 }
 
+function renderOpeningChoices() {
+  let container = $('#openingChoices');
+  if (!container) { container = document.createElement('section'); container.id = 'openingChoices'; container.className = 'create-card'; $('#conversationRoleScroll').after(container); }
+  container.hidden = Boolean(state.editing);
+  const selected = $$('#conversationRoleScroll .create-role.selected').map(node => node.dataset.id);
+  const previous = Object.fromEntries([...container.querySelectorAll('select')].map(select => [select.dataset.actorId, select.value]));
+  container.innerHTML = '<b>开场白选择</b><p>仅使用你选中的原文开场白，不会自动生成玩家发言。</p>' + state.characters.filter(actor => selected.includes(actor.id)).map(actor => `<label>${h(actor.name)}<select data-actor-id="${h(actor.id)}"><option value="">不添加开场白</option>${actor.first_mes ? `<option value="-1">默认：${h(actor.first_mes.slice(0, 60))}</option>` : ''}${(actor.alternate_greetings || []).map((text, index) => `<option value="${index}">备用 ${index + 1}：${h(text.slice(0, 60))}</option>`).join('')}</select></label>`).join('');
+  [...container.querySelectorAll('select')].forEach(select => { select.value = previous[select.dataset.actorId] || ''; });
+}
+$('#conversationRoleScroll').addEventListener('click', () => renderOpeningChoices());
+
 function renderPicker() {
   const npcs = state.characters.filter(character => !character.is_player_controlled);
   $('#newPlayer').innerHTML = state.characters.filter(character => character.is_player_controlled).map(character => `<option value="${h(character.id)}">${h(character.name)}</option>`).join('');
@@ -800,7 +896,7 @@ function renderConversationMessages(conversation) {
     const body = group.body.map(item => item.kind === 'dialogue'
       ? `<p class="turn-dialogue">${quotedDialogue(item.content)}</p>`
       : `<p class="turn-action">${h(item.content)}</p>`).join('');
-    blocks.push(`<div class="day-divider"><span>第 ${round} 轮</span></div><div class="msg npc"><div class="msg-avatar">${h((actor?.name || '旁白').slice(0, 1))}</div><div class="msg-main"><div class="meta"><b>${h(actor?.name || '旁白')}</b><span>${dateLabel(group.createdAt)}</span></div>${thoughts ? `<div class="thought-panel"><small>内心想法</small>${thoughts}</div>` : ''}${body ? `<div class="bubble turn-bubble">${body}</div>` : ''}</div></div>${actor ? stateCard(actor, group.snapshot) : ''}`);
+    blocks.push(`<div class="day-divider"><span>第 ${round} 轮</span></div><div class="msg npc"><div class="msg-avatar">${h((actor?.name || '旁白').slice(0, 1))}</div><div class="msg-main"><div class="meta"><b>${h(actor?.name || '旁白')}</b><span>${dateLabel(group.createdAt)}</span>${group.traceId?`<button data-reply-trace="${h(group.traceId)}">本条回复的设定记录</button>`:''}</div>${thoughts ? `<div class="thought-panel"><small>内心想法</small>${thoughts}</div>` : ''}${body ? `<div class="bubble turn-bubble">${body}</div>` : ''}</div></div>${actor ? stateCard(actor, group.snapshot) : ''}`);
     group = null;
   };
   for (const message of conversation.messages || []) {
@@ -819,7 +915,7 @@ function renderConversationMessages(conversation) {
     }
     if (!group || group.actor?.id !== actor?.id) {
       flush();
-      group = { actor, thoughts: [], body: [], snapshot: null, createdAt: message.created_at };
+      group = { actor, thoughts: [], body: [], snapshot: null, createdAt: message.created_at,traceId:message.context_trace_id };
     }
     if (message.kind === 'thought') group.thoughts.push(message.content);
     else if (message.kind === 'state') {
@@ -864,7 +960,32 @@ function renderChat(forceBottom = false) {
   const waiting = messages ? '等待你的下一句话' : '等待你的第一句话';
   const queuedAction = state.lastJob?.conversation_id === conversation.id && state.lastJob.status === 'queued' ? `<button data-cancel-job="${h(state.lastJob.id)}">取消本轮生成</button>` : '';
   const partial = state.lastJob?.conversation_id === conversation.id ? Object.entries(state.lastJob.progress || {}).filter(([, item]) => item.partial || item.thought || item.timings).map(([, item]) => `<div class="stream-preview">${item.thought ? `<div class="thought-panel"><small>内心想法</small><p>${h(item.thought)}</p></div>` : ''}${item.partial ? `<small>正在生成公开回应</small><p>${h(item.partial)}</p>` : ''}${item.retryable ? `<button data-retry-job="${h(state.lastJob.id)}">重试本轮</button>` : ''}${generationTimingMarkup(item.timings)}</div>`).join('') : '';
-  $('#chatView').innerHTML = `${participants}<div class="chat-title-card"><div><div class="eyebrow">CONVERSATION</div><strong id="chatTitle">${h(conversation.title)}</strong></div><div>${state.readOnly ? '' : '<button data-chat-settings>设置</button>'}<button onclick="closeChat()">返回</button></div></div><div class="environment-card"><div class="env-head"><b>${h(environment['地点'] || '当前场景')}</b><span>当前环境</span></div><div class="env-desc">${h(environment['环境描写'] || '')}</div><div class="env-tags">${Object.entries(environment).filter(([key, value]) => key !== '环境描写' && value).map(([, value]) => `<span>${h(value)}</span>`).join('')}</div></div>${messages}${partial}<div class="waiting"><span>${waiting}</span>${queuedAction}</div>`;
+  $('#chatView').innerHTML = `${participants}<div class="chat-title-card"><div><div class="eyebrow">CONVERSATION</div><strong id="chatTitle">${h(conversation.title)}</strong></div><div>${state.readOnly ? '' : '<button data-story-state>角色状态</button><button data-chat-settings>设置</button>'}<button onclick="closeChat()">返回</button></div></div><div class="environment-card"><div class="env-head"><b>${h(environment['地点'] || '当前场景')}</b><span>当前环境</span></div><div class="env-desc">${h(environment['环境描写'] || '')}</div><div class="env-tags">${Object.entries(environment).filter(([key, value]) => key !== '环境描写' && value).map(([, value]) => `<span>${h(value)}</span>`).join('')}</div></div>${messages}${partial}<div class="waiting"><span>${waiting}</span>${queuedAction}</div>`;
+  $('#chatView [data-story-state]')?.addEventListener('click', () => openStoryState(conversation, async () => {
+    state.current = await api(`/api/conversations/${path(conversation.id)}/`); renderChat();
+  }).catch(fail));
+  const traceButton=document.createElement('button');traceButton.textContent='本轮设定使用记录';
+  $('#chatView .chat-title-card > div:last-child').prepend(traceButton);
+  traceButton.onclick=async(event)=>{try {const identifier=event?.target?.closest('[data-reply-trace]')?.dataset.replyTrace;const result=await api(`/api/conversations/${path(conversation.id)}/context-traces/${identifier?`?trace_id=${path(identifier)}`:''}`);
+    const dialog=document.createElement('dialog');dialog.style.cssText='width:min(94vw,760px);max-height:86vh;overflow:auto;border-radius:16px;padding:20px';
+    dialog.innerHTML='<h3>实际生成时的设定使用记录</h3><p>记录保存当时内容版本，不会用当前世界书重新计算。预算为保守估算。</p>'+result.traces.map(trace=>`<details><summary>${h(new Date(trace.created_at).toLocaleString())} · ${h(({done:'完成',running:'进行中',queued:'等待',failed:'失败',cancelled:'取消'})[trace.status])}</summary><p>内容版本：${h(trace.content_hash)}</p><p>估算用量 ${trace.estimated_usage.used_estimate ?? '未知'} / ${trace.estimated_usage.budget ?? '未知'}</p><h4>实际选用</h4>${trace.selected.map(row=>`<details><summary>${h(row.name || row.field || '角色段落')} · ${h(({always:'始终使用',keyword:'关键词匹配',manual:'手动选择'})[row.mode] || '角色设定')}</summary><pre style="white-space:pre-wrap">${h(row.content || row.text || '')}</pre></details>`).join('')}<h4>排除原因</h4>${trace.excluded.map(row=>`<p>${h(row.name || row.id)}：${h(row.reason)}</p>`).join('')}<details><summary>角色与故事状态版本</summary><pre style="white-space:pre-wrap">${h(JSON.stringify(trace.character_snapshot,null,2))}</pre></details></details>`).join('')+'<button data-close>关闭</button>';
+    document.body.append(dialog);dialog.showModal();dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  }catch(error){fail(error);}};
+  $('#chatView').onclick=event=>{if(event.target.closest('[data-reply-trace]'))traceButton.onclick(event);};
+  const memoryButton=document.createElement('button');
+  memoryButton.textContent='故事记忆';
+  if(!state.readOnly) {
+    $('#chatView .chat-title-card > div:last-child').prepend(memoryButton);
+    memoryButton.addEventListener('click',()=>openStoryMemory(conversation,async()=>{
+      state.current=await api(`/api/conversations/${path(conversation.id)}/`); renderChat();
+    }).catch(fail));
+    const checkpointButton=document.createElement('button');
+    checkpointButton.textContent='剧情存档';
+    $('#chatView .chat-title-card > div:last-child').prepend(checkpointButton);
+    checkpointButton.addEventListener('click',()=>openStoryCheckpoints(conversation,async()=>{
+      state.current=await api(`/api/conversations/${path(conversation.id)}/`); renderChat();
+    },async id=>{await refreshLists();await window.openChat(id);}).catch(fail));
+  }
   const currentParticipants = conversation.participants || [];
   const player = currentParticipants.find(actor => actor.id === conversation.player_character_id);
   const replyActor = currentParticipants.find(actor => actor.id === state.replyActorId) || player || currentParticipants[0];
@@ -928,7 +1049,8 @@ window.openPanel = id => { closeSettingsPanels();
   if (id === 'smartImport' && state.readOnly) return window.toast('管理员只读查看中，不能使用智能导入');
   original.showConversations();
   if (id === 'characters' || id === 'materials' || id === 'account' || id === 'smartImport') original.openPanel(id);
-  if (id === 'materials') loadMarket();
+  if (id === 'materials') {loadMarket();loadImportHistory().catch(fail);}
+  if (id === 'smartImport' && !state.readOnly) smartImportLoadTasks().catch(fail);
   if (id === 'account') renderAccount();
 };
 
@@ -940,6 +1062,7 @@ window.openNewConversation = () => {
   $('#newPlayer').disabled = false;
   $('#deleteConversation').hidden = true;
   original.openNewConversation();
+  renderOpeningChoices();
 };
 window.startNewConversation = async () => {
   const player = state.characters.find(character => character.id === $('#newPlayer').value);
@@ -954,7 +1077,10 @@ window.startNewConversation = async () => {
       auto_generate: $('#newConversation [data-auto]')?.checked || false,
       auto_actor_ids: ids, auto_mode: 'serial',
     };
-    if (!state.editing) body.player_character_id = player.id;
+    if (!state.editing) {
+      body.player_character_id = player.id;
+      body.opening_greetings = Object.fromEntries($$('#openingChoices select').filter(select => ids.includes(select.dataset.actorId) && select.value !== '').map(select => [select.dataset.actorId, Number(select.value)]));
+    }
     const conversation = await api(state.editing ? `/api/conversations/${path(state.editing.id)}/` : '/api/conversations/', { method: state.editing ? 'PATCH' : 'POST', body });
     state.editing = null;
     original.closeNewConversation(); await refreshLists(); await loadChat(conversation.id);
@@ -1104,6 +1230,9 @@ window.openRoleCreator = () => {
   const flatten = nodes => nodes.flatMap(item => [item, ...flatten(item.children || [])]);
   $('#roleCategories').innerHTML = flatten(state.characterCategories).map(item => `<option value="${h(item.id)}">${h(item.name)}</option>`).join('');
   $('#deleteCharacter').hidden = true;
+  $('#roleContextConfigure').hidden = true;
+  $('#roleAlternateGreetings').value = '[]';
+  $('#roleCharacterWorldbook').value = '{}';
   original.openRoleCreator();
 };
 function editCharacter(id) {
@@ -1112,13 +1241,18 @@ function editCharacter(id) {
   if (!actor) return;
   window.openRoleCreator(); editingCharacter = actor;
   $('#deleteCharacter').hidden = false;
+  $('#roleContextConfigure').hidden = false;
   const fields = $$('#createRolePage .role-field input:not([type="checkbox"]):not([type="range"]), #createRolePage .role-field textarea');
   fields[0].value = actor.name; fields[1].value = actor.summary; fields[2].value = actor.personality;
-  fields[3].value = actor.relationship_notes?.关系 || ''; fields[4].value = actor.relationship_notes?.称呼 || '';
-  fields[5].value = actor.relationship_notes?.补充 || '';
+  fields[3].value = displayRoleValue(actor.relationship_notes?.关系); fields[4].value = displayRoleValue(actor.relationship_notes?.称呼);
+  fields[5].value = displayRoleValue(actor.relationship_notes?.补充);
   fields[6].value = actor.clothing_type || ''; fields[7].value = actor.clothing_state || '';
-  fields[8].value = actor.state_fields?.当前状态 || '';
+  fields[8].value = displayRoleValue(actor.state_fields?.当前状态);
   fields[9].value = actor.speech_habits; fields[10].value = actor.memories;
+  $('#roleScenario').value = actor.scenario || '';
+  $('#roleFirstMessage').value = actor.first_mes || '';
+  $('#roleAlternateGreetings').value = JSON.stringify(actor.alternate_greetings || [], null, 2);
+  $('#roleCharacterWorldbook').value = JSON.stringify(actor.character_worldbook || {}, null, 2);
   $('#isUserRole').checked = actor.is_player_controlled;
   $('#roleAffinity').value = actor.affinity ?? 0; $('#roleAffinityValue').textContent = `${actor.affinity ?? 0}%`;
   [...$('#roleCategories').options].forEach(option => { option.selected = (actor.category_ids || []).includes(option.value); });
@@ -1126,20 +1260,29 @@ function editCharacter(id) {
     if (['服装', '服装状态', '当前状态'].includes(key)) continue;
     window.addRoleStateField();
     const row = $('#customStateFields .custom-state-row:last-child');
-    row.querySelectorAll('input')[0].value = key; row.querySelectorAll('input')[1].value = String(value);
+    row.querySelectorAll('input')[0].value = key; row.querySelectorAll('input')[1].value = typeof value === 'string' ? value : JSON.stringify(value);
+    row.dataset.originalKey=key; row.dataset.originalDisplay=row.querySelectorAll('input')[1].value; row.dataset.originalValue=JSON.stringify(value);
   }
 }
+$('#roleContextConfigure').addEventListener('click', () => { if (editingCharacter) openCharacterContext(editingCharacter, refreshLists).catch(fail); });
 window.saveRoleCard = async () => {
   const fields = $$('#createRolePage .role-field input:not([type="checkbox"]):not([type="range"]), #createRolePage .role-field textarea');
-  const state_fields = { 当前状态: fields[8].value };
-  $$('#customStateFields .custom-state-row').forEach(row => { const [key, value] = [...row.querySelectorAll('input')].map(input => input.value.trim()); if (key) state_fields[key] = value; });
+  const state_fields = { 当前状态: readRoleValue(editingCharacter?.state_fields?.当前状态,fields[8].value) };
+  for(const key of ['服装','服装状态']) if(editingCharacter?.state_fields && key in editingCharacter.state_fields) state_fields[key]=editingCharacter.state_fields[key];
+  $$('#customStateFields .custom-state-row').forEach(row => { const [keyInput,valueInput]=row.querySelectorAll('input'); const key=keyInput.value.trim(), value=valueInput.value; if (key) { if(row.dataset.originalDisplay===value) state_fields[key]=JSON.parse(row.dataset.originalValue); else {try {state_fields[key]=JSON.parse(value);}catch {state_fields[key]=value;}} } });
   const body = { name: fields[0].value.trim(), summary: fields[1].value, personality: fields[2].value,
-    relationship_notes: { 关系: fields[3].value, 称呼: fields[4].value, 补充: fields[5].value },
+    relationship_notes: mergeRoleRelationships(editingCharacter?.relationship_notes,{关系:fields[3].value,称呼:fields[4].value,补充:fields[5].value}),
     state_fields, speech_habits: fields[9].value, memories: fields[10].value,
     is_player_controlled: $('#isUserRole').checked,
     affinity: Number($('#roleAffinity').value), clothing_type: $('#roleClothingType').value, clothing_state: $('#roleClothingState').value,
     category_ids: [...$('#roleCategories').selectedOptions].map(option => option.value) };
   try {
+    body.scenario = $('#roleScenario').value;
+    body.first_mes = $('#roleFirstMessage').value;
+    try {
+      body.alternate_greetings = JSON.parse($('#roleAlternateGreetings').value || '[]');
+      body.character_worldbook = JSON.parse($('#roleCharacterWorldbook').value || '{}');
+    } catch { throw new Error('备用开场白或专属世界书的 JSON 格式无效'); }
     const saved = await api(editingCharacter ? `/api/characters/${path(editingCharacter.id)}/` : '/api/characters/', { method: editingCharacter ? 'PATCH' : 'POST', body });
     const avatar = $('#roleAvatarInput')?.files?.[0];
     if (avatar) { const form = new FormData(); form.append('avatar', avatar); await api(`/api/characters/${path(saved.id)}/avatar/`, { method: 'POST', body: form }); }
@@ -1148,6 +1291,7 @@ window.saveRoleCard = async () => {
 };
 
 function renderAccount() {
+  if(!state.readOnly && !$('#personalBackupButton')) {const button=document.createElement('button');button.id='personalBackupButton';button.textContent='个人完整备份与恢复';$('#account').append(button);button.onclick=()=>openPersonalBackup(refreshLists).catch(fail);}
   $('#account .card .card-head b').textContent = state.me.username;
   $('#account .card .avatar').textContent = state.me.username.slice(0, 1);
   const accountRole = $('#accountRole');
@@ -1203,6 +1347,7 @@ async function loadSettings() {
   model[0].value = values.temperature ?? '';
   model[1].value = values.top_p ?? '';
   model[2].value = values.max_tokens ?? '';
+  $('#modelContextCapacity').value = values.context_capacity ?? 65536;
   const switches = $$('#modelSettings .switch-row input');
   switches[0].checked = !!values.stream_output;
   switches[1].checked = !!values.save_raw_response;
@@ -1407,7 +1552,7 @@ function modelSettingsBody() {
   const fields = $$('#modelDetail .setting-row input');
   const model = $('#modelName').value === '__custom__' ? $('#customModelName').value.trim() : $('#modelName').value;
   const body = { provider_id: $('#modelProvider').value, api_base_url: $('#modelBaseUrl').value.trim(), model,
-    temperature: Number(fields[0].value), top_p: Number(fields[1].value), max_tokens: Number(fields[2].value),
+    temperature: Number(fields[0].value), top_p: Number(fields[1].value), max_tokens: Number(fields[2].value), context_capacity: Number($('#modelContextCapacity').value),
     stream_output: $('#modelSettings .switch-row input').checked,
     save_raw_response: $$('#modelSettings .switch-row input')[1].checked };
   if ($('#modelApiKey').value) body.api_key = $('#modelApiKey').value;
@@ -1476,7 +1621,7 @@ $('#characterImportFile').addEventListener('change', async event => {
     const body = isPng ? (() => { const form = new FormData(); form.append('file', file); return form; })() : { payload: await readJsonFile(file) };
     const preview = await api('/api/characters/import/preview/', { method: 'POST', body });
     const names = preview.characters.map(item => `${item.name}${item.conflict ? '（同名）' : ''}`).join('、');
-    if (window.confirm(`识别到：${names}\n确认导入吗？`)) { await api('/api/characters/import/commit/', { method: 'POST', body: preview }); await refreshLists(); window.toast('角色卡已导入'); }
+    if (window.confirm(`识别到：${names}\n确认导入吗？`)) { await api('/api/characters/import/commit/', { method: 'POST', body: {...preview,idempotency_key:smartImportNewId()} }); await refreshLists(); window.toast('角色卡已导入'); }
   } catch (error) { fail(error); } finally { event.target.value = ''; }
 });
 
@@ -1629,7 +1774,7 @@ $('#worldBookImportFile').addEventListener('change', async event => {
     const panel = $('#worldBookImportPreview'); panel.hidden = false;
     panel.innerHTML = `<b>${h(preview.worldbook.name)}</b><br>${preview.counts.categories} 个分类 · ${preview.counts.entries} 个条目${preview.warnings.length ? `<br>${preview.warnings.map(h).join('<br>')}` : ''}`;
     if (window.confirm(`导入“${preview.worldbook.name}”？`)) {
-      const result = await api('/api/worldbooks/import/commit/', { method: 'POST', body: { payload, source_format, conflict_policy: 'keep_both' } });
+      const result = await api('/api/worldbooks/import/commit/', { method: 'POST', body: { payload, source_format, conflict_policy: 'keep_both',idempotency_key:smartImportNewId() } });
       await loadWorldBooks(result.worldbook.id); window.toast('世界书已导入');
     }
   } catch (error) { fail(error); }
@@ -1684,6 +1829,7 @@ function openConversationSettings() {
   $('#newOptions [data-auto]').checked = conversation.auto_generate;
   $('#deleteConversation').hidden = false;
   original.openNewConversation();
+  renderOpeningChoices();
 }
 async function deleteConversation() {
   if (!state.editing || !window.confirm('确定删除这段对话和所有消息吗？')) return;

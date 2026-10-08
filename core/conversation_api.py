@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import transaction
+from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
@@ -9,6 +10,7 @@ from .auth_api import body_or_error
 from .character_api import authentication_error, character_payload
 from .generation_api import npc_ids, queue_generation
 from .models import Character, Conversation, ConversationParticipant, GenerationJob, Message
+from .story_state import ensure_story_state, actor_context, state_payload
 
 
 def message_payload(message):
@@ -20,6 +22,8 @@ def message_payload(message):
         "source": message.source,
         "consumed_by": message.consumed_by,
         "state_snapshot": message.state_snapshot,
+        "has_story_snapshot": bool(message.story_snapshot),
+        "context_trace_id": str(message.context_trace_id) if message.context_trace_id else None,
         "created_at": message.created_at.isoformat(),
     }
 
@@ -32,7 +36,10 @@ def conversation_payload(conversation, *, include_messages=False):
         "environment": conversation.environment,
         "language": conversation.language,
         "player_character_id": str(conversation.player_character_id),
-        "participants": [character_payload(link.character) for link in participant_links],
+        "participants": [{**character_payload(actor_context(conversation,link.character)),
+                          'story_state':state_payload(ensure_story_state(conversation,link.character))}
+                         for link in participant_links],
+        "story_revision": conversation.story_revision,
         "auto_generate": conversation.auto_generate,
         "auto_actor_ids": conversation.auto_actor_ids,
         "auto_mode": conversation.auto_mode,
@@ -61,7 +68,7 @@ def valid_environment(value):
 
 
 def validate_conversation_data(data, *, creation=False):
-    allowed = {"title", "environment", "language", "auto_generate", "auto_actor_ids", "auto_mode", "character_ids", "player_character_id"}
+    allowed = {"title", "environment", "language", "auto_generate", "auto_actor_ids", "auto_mode", "character_ids", "player_character_id", "opening_greetings"}
     if any(key not in allowed for key in data):
         return False
     if creation and ("title" not in data or "player_character_id" not in data or "character_ids" not in data):
@@ -112,6 +119,20 @@ def conversations(request):
     if not player or not npcs or len(npcs) != len(character_ids):
         return JsonResponse({"error": "请选择自己的玩家角色卡和至少一名 NPC"}, status=400)
     auto_ids = data.get("auto_actor_ids", [])
+    greetings=data.get('opening_greetings',{})
+    opening=[]
+    if not isinstance(greetings,dict) or len(greetings)>12 or set(greetings)-{str(npc.pk) for npc in npcs}:
+        return JsonResponse({'error':'开场白角色选择无效'},status=400)
+    for npc in npcs:
+        if str(npc.pk) not in greetings:
+            continue
+        index=greetings[str(npc.pk)]
+        if type(index) is not int or index < -1 or index >= len(npc.alternate_greetings):
+            return JsonResponse({'error':'开场白编号无效'},status=400)
+        text=npc.first_mes if index==-1 else npc.alternate_greetings[index]
+        if not text:
+            return JsonResponse({'error':'所选开场白没有原文内容'},status=400)
+        opening.append((npc,text))
     if len(auto_ids) != len(set(auto_ids)) or any(actor_id not in {str(npc.id) for npc in npcs} for actor_id in auto_ids):
         return JsonResponse({"error": "自动回复角色无效"}, status=400)
 
@@ -129,6 +150,10 @@ def conversations(request):
         ConversationParticipant.objects.create(conversation=conversation, character=player, position=0)
         for position, npc in enumerate(npcs, start=1):
             ConversationParticipant.objects.create(conversation=conversation, character=npc, position=position)
+        for character in [player,*npcs]:
+            ensure_story_state(conversation,character,recover_history=False)
+        for npc,text in opening:
+            Message.objects.create(conversation=conversation,speaker=npc,kind=Message.DIALOGUE,content=text,source='preset')
     return JsonResponse(conversation_payload(conversation), status=201)
 
 
@@ -147,7 +172,7 @@ def conversation_detail(request, conversation_id):
         data, error = body_or_error(request)
         if error:
             return error
-        if not data or not validate_conversation_data(data) or "player_character_id" in data:
+        if not data or not validate_conversation_data(data) or "player_character_id" in data or 'opening_greetings' in data:
             return JsonResponse({"error": "对话设置无效"}, status=400)
         npcs = None
         if "character_ids" in data:
@@ -167,6 +192,9 @@ def conversation_detail(request, conversation_id):
                 if field in data:
                     setattr(conversation, field, data[field].strip() if field == "title" else data[field])
             conversation.save()
+            if any(key in data for key in ('environment','language','character_ids')):
+                Conversation.objects.filter(pk=conversation.pk).update(story_revision=F('story_revision')+1)
+                conversation.refresh_from_db()
     return JsonResponse(conversation_payload(conversation, include_messages=True))
 
 

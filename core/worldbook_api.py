@@ -1,3 +1,4 @@
+from .character_lore import sync_lore_from_book
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -268,6 +269,7 @@ def entries(request, worldbook_id):
             item.full_clean()
             item.save()
             _replace_entry_relations(item, data, request.user)
+            sync_lore_from_book(book)
     except (ValueError, ValidationError):
         return JsonResponse({"error": "条目内容或关联无效"}, status=400)
     except IntegrityError:
@@ -282,7 +284,9 @@ def entry_detail(request, worldbook_id, entry_id):
     book = get_object_or_404(Worldbook, pk=worldbook_id, owner=request.user)
     item = get_object_or_404(WorldbookEntry, pk=entry_id, worldbook=book)
     if request.method == "DELETE":
-        item.delete()
+        with transaction.atomic():
+            item.delete()
+            sync_lore_from_book(book)
         return JsonResponse({}, status=204)
     if request.method == "PATCH":
         data, error = body_or_error(request)
@@ -294,6 +298,7 @@ def entry_detail(request, worldbook_id, entry_id):
                 item.full_clean()
                 item.save()
                 _replace_entry_relations(item, data, request.user)
+                sync_lore_from_book(book)
         except (ValueError, ValidationError):
             return JsonResponse({"error": "条目内容或关联无效"}, status=400)
         except IntegrityError:
@@ -422,11 +427,16 @@ def import_commit(request):
     data, error = body_or_error(request)
     if error:
         return error
-    if not isinstance(data, dict) or set(data) - {"payload", "source_format", "conflict_policy"}:
+    if not isinstance(data, dict) or set(data) - {"payload", "source_format", "conflict_policy", "idempotency_key"}:
         return JsonResponse({"error": "导入内容无效"}, status=400)
     try:
         parsed = parse_import(data.get("payload"), data.get("source_format", "native"))
-        book = commit_import(parsed, request.user, conflict_policy=data.get("conflict_policy", "keep_both"))
+        from .import_history import commit_import_batch
+        import uuid
+        def commit():
+            book=commit_import(parsed,request.user,conflict_policy=data.get('conflict_policy','keep_both'))
+            return {'worldbook':worldbook_payload(book,expanded=True),'warnings':parsed.warnings}
+        result=commit_import_batch(request.user,{key:value for key,value in data.items() if key!='idempotency_key'},data.get('idempotency_key') or uuid.uuid4().hex,operation=commit)
     except ImportValidationError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
-    return JsonResponse({"worldbook": worldbook_payload(book, expanded=True), "warnings": parsed.warnings}, status=201)
+    return JsonResponse(result,status=201)

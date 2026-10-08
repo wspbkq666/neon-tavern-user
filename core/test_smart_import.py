@@ -34,15 +34,16 @@ class SmartImportNormalizationTests(SimpleTestCase):
         self.assertEqual(entry["scope_type"], "character")
         self.assertEqual(entry["scoped_character_ids"], [payload["characters"][0]["package_id"]])
 
-    def test_unmappable_card_fields_are_reported_and_not_silently_mapped(self):
+    def test_supported_card_fields_are_preserved_and_unknown_fields_are_reported(self):
         result = {"items": [{"type": "npc", "fields": {"name": "Lin", "first_mes": "Hello", "alternate_greetings": ["Hi"], "character_worldbook": {"entries": []}, "custom_unknown": "preserve me"}, "source_excerpt": "Lin", "confidence": 0.7, "warnings": []}]}
         drafts, _ = normalize_smart_import(result)
-        self.assertNotIn("first_mes", drafts[0]["fields"])
-        self.assertEqual(drafts[0]["unmapped_fields"]["first_mes"], "Hello")
+        self.assertEqual(drafts[0]["fields"]["first_mes"], "Hello")
+        self.assertEqual(drafts[0]["fields"]["alternate_greetings"], ["Hi"])
+        self.assertEqual(drafts[0]["fields"]["character_worldbook"], {"entries": []})
         self.assertEqual(drafts[0]["unmapped_fields"]["custom_unknown"], "preserve me")
         warning_text = " ".join(drafts[0]["warnings"])
         for field in ("first_mes", "alternate_greetings", "character_worldbook"):
-            self.assertIn(field, warning_text)
+            self.assertNotIn(field, warning_text)
 
     def test_worldbook_extra_fields_remain_in_visible_unmapped_draft_data(self):
         result = {"items": [{"type": "worldbook", "fields": {"name": "Book", "entries": [{"name": "Entry", "content": "Text"}], "custom_rule": "keep me"}, "source_excerpt": "Book", "confidence": 0.8, "warnings": []}]}

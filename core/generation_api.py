@@ -48,6 +48,7 @@ def queue_generation(conversation, user, actor_ids, mode="serial", hints=None, a
                 return GenerationJob.objects.create(
                     conversation=conversation, requested_by=user, actor_ids=actor_ids,
                     mode=mode, director_hints=hints, auto=auto,
+                    story_revision=Conversation.objects.get(pk=conversation.pk).story_revision,
                 )
         except IntegrityError:
             return GenerationJob.objects.filter(conversation=conversation, status="queued").first() if auto else None
@@ -92,12 +93,15 @@ def cancel(request, job_id):
     if error:
         return error
     job = get_object_or_404(GenerationJob, pk=job_id, requested_by=request.user, conversation__owner=request.user)
-    if job.status != "queued":
-        return JsonResponse({"error": "只有尚未开始的生成任务可以取消"}, status=409)
+    if job.status not in {'queued','running'}:
+        return JsonResponse({"error": "生成任务已经结束"}, status=409)
     job.status = "cancelled"
     job.error = "用户取消了本轮生成"
     job.finished_at = timezone.now()
     job.save(update_fields=["status", "error", "finished_at"])
+    if job.task_kind=='memory':
+        from django.db.models import F
+        Conversation.objects.filter(pk=job.conversation_id).update(story_revision=F('story_revision')+1,memory_summary_status='idle',memory_summary_error='已取消本次总结')
     return JsonResponse({"id": str(job.id), "status": job.status})
 
 

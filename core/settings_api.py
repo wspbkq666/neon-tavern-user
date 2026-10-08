@@ -25,6 +25,7 @@ DEFAULT_VALUES = {
     "temperature": 0.8,
     "top_p": 0.9,
     "max_tokens": 4096,
+    "context_capacity": 65536,
     "language": "中文",
     "world_background": "",
     "global_prompt": "",
@@ -101,6 +102,8 @@ def validate_value(name, value):
         return isinstance(value, (int, float)) and not isinstance(value, bool) and 0 <= value <= (2 if name == "temperature" else 1)
     if name == "max_tokens":
         return isinstance(value, int) and not isinstance(value, bool) and 128 <= value <= 32768
+    if name == 'context_capacity':
+        return type(value) is int and 2048<=value<=2000000
     if name in {"memory_threshold", "profile_threshold"}:
         return isinstance(value, int) and not isinstance(value, bool) and 5 <= value <= 500
     if name in {"adult_content_preference", "strict_persona", "auto_state_extraction", "stream_output", "save_raw_response"}:

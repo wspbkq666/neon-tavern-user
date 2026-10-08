@@ -33,14 +33,16 @@ test('drafts can change category and be skipped before final import', async () =
   assert.match(script, /relationship_notes/);
   assert.match(script, /state_fields/);
   assert.match(script, /clothing_type/);
-  assert.match(script, /categories: '角色分类（JSON 数组）'/);
+  assert.match(script, /data-smart-import-field="categories"/);
+  assert.match(script, /data-smart-import-category/);
+  assert.match(script, /子分类（玩家卡默认归入“我的角色卡”/);
   assert.match(script, /好感度（0–100）/);
   assert.match(script, /data-smart-import-field="affinity"/);
 });
 
 test('preview stages the model result and bundle validation before explicit commit', async () => {
   const script = await read('frontend_dist/assets/prototype-app.js');
-  const analyze = script.indexOf('/api/smart-import/preview/');
+  const analyze = script.indexOf("const task = await api('/api/import-tasks/'");
   const bundlePreview = script.indexOf('/api/bundles/import/preview/', analyze);
   const commit = script.indexOf('/api/bundles/import/commit/', bundlePreview);
   assert.ok(analyze >= 0 && bundlePreview > analyze && commit > bundlePreview);

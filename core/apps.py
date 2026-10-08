@@ -6,4 +6,4 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
-        from . import chat_sync, user_directory_sync  # noqa: F401
+        from . import chat_sync, user_directory_sync, story_snapshots  # noqa: F401

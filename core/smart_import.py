@@ -320,8 +320,9 @@ def normalize_smart_import(result):
         unmapped_fields = {}
         if kind in {"npc", "player"}:
             allowed = {"name", "description", "summary", "personality", "scenario", "memories", "mes_example", "speech_habits", "relationship_notes", "state_fields", "affinity", "clothing_type", "clothing_state", "categories"}
+            allowed.update({'first_mes','alternate_greetings','character_worldbook'})
             fields = {key: value for key, value in source_fields.items() if key in allowed}
-            unmapped = [key for key in source_fields if key in {"first_mes", "alternate_greetings", "character_worldbook"}]
+            unmapped = []
             for key in unmapped:
                 unmapped_fields[key] = source_fields[key]
                 warnings.append(f"字段 {key} 暂无对应的本地角色卡字段，原内容保留在草稿中供确认。")
@@ -342,7 +343,7 @@ def normalize_smart_import(result):
                 warnings.append("未识别到玩家卡名称，已暂用“玩家”，导入前请确认或修改。")
             for field_name in ("description", "personality", "scenario", "memories", "mes_example", "speech_habits", "clothing_type", "clothing_state"):
                 value = source_fields.get(field_name)
-                maximum = 200 if field_name in {"clothing_type", "clothing_state"} else 5000 if field_name in {"mes_example", "speech_habits"} else 10000
+                maximum = 200 if field_name in {"clothing_type", "clothing_state"} else 100000
                 if value is not None and (not isinstance(value, str) or len(value) > maximum):
                     raise ValueError(f"角色字段 {field_name} 格式无效")
             description = source_fields.get("description") or ""
@@ -360,8 +361,8 @@ def normalize_smart_import(result):
                     memories = "\n\n".join(value for value in (description, memories) if value)
                 fields.pop("description", None)
                 warnings.append("较长简介已完整保留在背景与记忆中，未截断原文。")
-            if len(memories) > 10000:
-                raise ValueError("角色背景、剧情与记忆超过 10,000 字，请拆分后重试")
+            if len(memories) > 100000:
+                raise ValueError("角色背景、剧情与记忆超过 100,000 字，请拆分后重试")
             for field_name in ("relationship_notes", "state_fields"):
                 value = source_fields.get(field_name)
                 if value is not None and (not isinstance(value, dict) or len(value) > 50 or any(not isinstance(key, str) or not 1 <= len(key) <= 50 or len(json.dumps(entry, ensure_ascii=False)) > 2000 for key, entry in value.items())):
@@ -397,6 +398,10 @@ def normalize_smart_import(result):
             package_id = uuid.uuid4().hex
             character_ids.setdefault(name.casefold(), []).append(package_id)
             row = {
+                'scenario':source_fields.get('scenario',''),
+                'first_mes':source_fields.get('first_mes',''),
+                'alternate_greetings':source_fields.get('alternate_greetings',[]),
+                'character_worldbook':source_fields.get('character_worldbook',{}),
                 "package_id": package_id, "name": name,
                 "summary": summary or "",
                 "personality": personality,

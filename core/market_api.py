@@ -15,6 +15,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from .auth_api import body_or_error
 from .bundle_transfer import commit_bundle, export_bundle, parse_bundle
 from .character_api import _ensure_category_path, _native_character, _parse_character_payload, authentication_error
+from .character_lore import EXTENDED_FIELDS
 from .market_signing import (
     create_and_store_site_keypair,
     generate_site_keypair,
@@ -56,6 +57,7 @@ def _category_path(category):
 
 def _character_snapshot(character):
     item = {
+        **{key:getattr(character,key) for key in EXTENDED_FIELDS},
         "name": character.name,
         "summary": character.summary,
         "personality": character.personality,

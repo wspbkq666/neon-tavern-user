@@ -12,6 +12,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from .auth_api import body_or_error
 from .models import Character, CharacterCategory
+from .character_lore import EXTENDED_FIELDS, validate_extended_fields
 
 
 def character_payload(character):
@@ -22,6 +23,7 @@ def character_payload(character):
         "personality": character.personality,
         "speech_habits": character.speech_habits,
         "memories": character.memories,
+        **{key:getattr(character,key) for key in EXTENDED_FIELDS},
         "relationship_notes": character.relationship_notes,
         "state_fields": character.state_fields,
         "affinity": character.affinity,
@@ -71,9 +73,17 @@ def characters(request):
 
 def set_character_fields(character, data):
     allowed = {"name", "summary", "personality", "speech_habits", "memories", "relationship_notes", "state_fields", "is_player_controlled", "affinity", "clothing_type", "clothing_state", "category_ids"}
+    allowed.update(EXTENDED_FIELDS)
     if not data or any(key not in allowed for key in data):
         return JsonResponse({"error": "角色卡内容无效"}, status=400)
-    for field, maximum in (("name", 60), ("summary", 200), ("personality", 10000), ("speech_habits", 5000), ("memories", 10000)):
+    for key in EXTENDED_FIELDS:
+        if key in data:
+            setattr(character,key,data[key])
+    try:
+        validate_extended_fields(character)
+    except ValueError as exc:
+        return JsonResponse({'error':str(exc)},status=400)
+    for field, maximum in (("name", 60), ("summary", 200), ("personality", 100000), ("speech_habits", 100000), ("memories", 100000)):
         if field in data:
             value = data[field]
             if not isinstance(value, str) or len(value) > maximum or (field == "name" and not value.strip()):
@@ -284,6 +294,13 @@ def _character_mapping(item):
     return data
 
 
+def _full_text(data, key, alias=None):
+    value=data.get(key,data.get(alias,'')) if alias else data.get(key,'')
+    if not isinstance(value,str) or len(value)>100000:
+        raise ValueError('角色设定字段必须为不超过 100,000 字的文字')
+    return value
+
+
 def _native_character(item, *, default_categories=None):
     data = _character_mapping(item)
     if not isinstance(data, dict):
@@ -294,12 +311,16 @@ def _native_character(item, *, default_categories=None):
     categories = data.get("categories")
     if not isinstance(categories, list) or not categories:
         categories = default_categories or []
+    extended={key:data.get(key,[] if key=='alternate_greetings' else {} if key in ('character_worldbook','context_policy') else '') for key in EXTENDED_FIELDS}
+    probe=Character(name=name,**extended)
+    validate_extended_fields(probe)
     return {
+        **extended,
         "name": name.strip()[:60],
         "summary": str(data.get("summary", data.get("description", "")))[:200],
-        "personality": str(data.get("personality", ""))[:10000],
-        "speech_habits": str(data.get("speech_habits", data.get("mes_example", "")))[:5000],
-        "memories": str(data.get("memories", data.get("scenario", "")))[:10000],
+        "personality": _full_text(data, "personality"),
+        "speech_habits": _full_text(data, "speech_habits", "mes_example"),
+        "memories": _full_text(data, "memories"),
         "relationship_notes": data.get("relationship_notes", {}) if isinstance(data.get("relationship_notes", {}), dict) else {},
         "state_fields": data.get("state_fields", {}) if isinstance(data.get("state_fields", {}), dict) else {},
         "affinity": max(0, min(100, int(data.get("affinity", 0)))) if str(data.get("affinity", 0)).lstrip("-").isdigit() else 0,
@@ -403,21 +424,31 @@ def character_import_commit(request):
     data, error = body_or_error(request)
     if error:
         return error
-    imported = []
-    for raw in data.get("characters", [])[:100]:
-        item = _native_character(raw)
-        name = item.pop("name")
-        paths = item.pop("categories")
-        item.pop("conflict", None)
-        if Character.objects.filter(owner=request.user, name=name).exists():
-            name = f"{name}（导入）"[:60]
-        character = Character.objects.create(owner=request.user, name=name, **item)
-        for category_path in paths:
-            category = _ensure_category_path(request.user, category_path)
-            if category:
-                category.characters.add(character)
-        imported.append(character_payload(character))
-    return JsonResponse({"characters": imported}, status=201)
+    if not isinstance(data,dict) or not isinstance(data.get('characters'),list) or len(data['characters'])>100:
+        return JsonResponse({'error':'角色卡导入格式无效或超过 100 项'},status=400)
+    from .import_history import commit_import_batch
+    import uuid
+    def commit():
+        imported = []
+        for raw in data.get("characters", [])[:100]:
+            item = _native_character(raw)
+            name = item.pop("name")
+            paths = item.pop("categories")
+            item.pop("conflict", None)
+            if Character.objects.filter(owner=request.user, name=name).exists():
+                name = f"{name}（导入）"[:60]
+            character = Character.objects.create(owner=request.user, name=name, **item)
+            for category_path in paths:
+                category = _ensure_category_path(request.user, category_path)
+                if category:
+                    category.characters.add(character)
+            imported.append(character_payload(character))
+        return {'characters':imported}
+    try:
+        result=commit_import_batch(request.user,{key:value for key,value in data.items() if key!='idempotency_key'},data.get('idempotency_key') or uuid.uuid4().hex,operation=commit)
+    except (ValueError,TypeError,ValidationError) as exc:
+        return JsonResponse({'error':'角色卡导入失败，请检查字段格式'},status=400)
+    return JsonResponse(result,status=201)
 
 
 @require_GET
@@ -429,7 +460,7 @@ def export_character(request, character_id):
     item = character_payload(character)
     item.pop("id", None); item.pop("avatar_url", None); item.pop("category_ids", None)
     item["categories"] = [category.name for category in character.categories.all()]
-    response = JsonResponse({"format": "neon-tavern-character", "version": 1, "characters": [item]}, json_dumps_params={"ensure_ascii": False})
+    response = JsonResponse({"format": "neon-tavern-character", "version": 2, "characters": [item]}, json_dumps_params={"ensure_ascii": False})
     response["Content-Disposition"] = f'attachment; filename="character-{character.id}.json"'
     return response
 
@@ -462,7 +493,7 @@ def export_character_category(request, category_id):
         item.pop("id", None); item.pop("avatar_url", None); item.pop("category_ids", None)
         item["categories"] = [category_path(category) for category in sorted(character.categories.all(), key=lambda value: order.get(value.id, 999999)) if category.id in included_ids]
         rows.append(item)
-    payload = {"format": "neon-tavern-character", "version": 1, "category": root.name, "characters": rows}
+    payload = {"format": "neon-tavern-character", "version": 2, "category": root.name, "characters": rows}
     response = JsonResponse(payload, json_dumps_params={"ensure_ascii": False})
     response["Content-Disposition"] = f'attachment; filename="characters-{root.id}.json"'
     return response

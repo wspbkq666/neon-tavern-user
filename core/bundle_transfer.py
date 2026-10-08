@@ -5,12 +5,13 @@ from dataclasses import dataclass, field
 from django.db import transaction
 
 from .character_api import _native_character
+from .character_lore import EXTENDED_FIELDS
 from .models import Character, CharacterCategory, Worldbook
 from .worldbook_transfer import ImportValidationError, commit_import, export_native, parse_import
 
 
 FORMAT = "neon-tavern-bundle"
-VERSION = 1
+VERSION = 2
 MAX_BYTES = 20 * 1024 * 1024
 MAX_CHARACTERS = 100
 MAX_WORLDBOOKS = 100
@@ -82,6 +83,7 @@ def export_bundle(owner, character_ids, worldbook_ids):
     package_character_ids = {str(item.id) for item in characters}
     for character in characters:
         row = {
+            **{key:getattr(character,key) for key in EXTENDED_FIELDS},
             "package_id": str(character.id),
             "name": character.name,
             "summary": character.summary,
@@ -123,7 +125,7 @@ def export_bundle(owner, character_ids, worldbook_ids):
 def parse_bundle(payload, owner):
     if not isinstance(payload, dict) or _serialized_size(payload) > MAX_BYTES:
         raise ImportValidationError("整合包内容无效或超过 20 MB")
-    if payload.get("format") != FORMAT or payload.get("version") != VERSION:
+    if payload.get("format") != FORMAT or payload.get("version") not in (1,VERSION):
         raise ImportValidationError("不支持的整合包格式或版本")
     raw_characters = payload.get("characters")
     raw_books = payload.get("worldbooks")

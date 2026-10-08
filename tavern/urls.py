@@ -19,10 +19,31 @@ from django.urls import path
 from core import auth_api, bundle_api, character_api, conversation_api, generation_api, market_admin_api, market_api, profile_api, settings_api, smart_import_api, worldbook_api
 from core import admin_api
 from core import views
+from core import story_api
+from core import context_api
+from core import import_task_api
+from core import import_history_api
+from core import generation_trace_api
+from core import personal_backup_api
 from core import disaster_recovery_api, disaster_recovery_transfer
 from core import site_federation_client
 
 urlpatterns = [
+    path('api/personal-backups/', personal_backup_api.jobs),
+    path('api/personal-backups/<uuid:job_id>/', personal_backup_api.job_detail),
+    path('api/personal-backups/<uuid:job_id>/download/', personal_backup_api.download),
+    path('api/conversations/<uuid:conversation_id>/context-traces/', generation_trace_api.traces),
+    path('api/import-batches/', import_history_api.batches),
+    path('api/import-batches/<uuid:batch_id>/', import_history_api.batch_detail),
+    path('api/import-tasks/', import_task_api.tasks),
+    path('api/import-tasks/<uuid:task_id>/', import_task_api.task_detail),
+    path('api/import-tasks/<uuid:task_id>/merge/', import_task_api.task_merge),
+    path('api/import-tasks/<uuid:task_id>/coverage/', import_task_api.task_coverage),
+    path('api/characters/<uuid:character_id>/context/', context_api.character_context),
+    path('api/conversations/<uuid:conversation_id>/checkpoints/', story_api.checkpoints),
+    path('api/conversations/<uuid:conversation_id>/checkpoints/<uuid:checkpoint_id>/', story_api.checkpoint_detail),
+    path('api/conversations/<uuid:conversation_id>/memory/', story_api.memory),
+    path('api/conversations/<uuid:conversation_id>/states/<uuid:character_id>/', story_api.actor_state),
     path("", views.home),
     path("login/", views.login_page),
     path("app/", views.app_page),

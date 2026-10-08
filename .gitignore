@@ -11,3 +11,4 @@ dr-replica/
 dr-snapshots/
 dr-*.json
 dr-*.lock
+.test-temp/
